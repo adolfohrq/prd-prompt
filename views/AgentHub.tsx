@@ -6,7 +6,9 @@ import { AgentCard } from '../components/AgentCard';
 import { AgentDetailsModal } from '../components/AgentDetailsModal';
 import { ChatDrawer } from '../components/Chat/ChatDrawer';
 import { MagicMatchModal } from '../components/MagicMatchModal';
+import { EmptyState } from '../components/EmptyState';
 import { SearchIcon, WandIcon, StarIcon } from '../components/icons/Icons';
+import { Button } from '../components/Button';
 import { AppContext } from '../contexts/AppContext';
 import { geminiService } from '../services/geminiService';
 import { db } from '../services/databaseService';
@@ -192,28 +194,28 @@ export const AgentHub: React.FC = () => {
         {/* HERO SECTION */}
         <div className="py-8 mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
             <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-bold uppercase tracking-wider mb-3">
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                     </span>
                     AI Agents v2.0
                 </div>
-                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
+                <h1 className="text-4xl font-extrabold text-secondary-900 tracking-tight mb-2">
                     Hub de Especialistas
                 </h1>
-                <p className="text-lg text-gray-500 max-w-2xl">
+                <p className="text-lg text-secondary-500 max-w-2xl">
                     Sua equipe virtual de alta performance. Selecione um agente e resolva tarefas complexas em segundos.
                 </p>
             </div>
 
-            <button 
+            <button
                 onClick={() => setIsMagicOpen(true)}
-                className="group relative inline-flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                className="group relative inline-flex items-center gap-3 px-6 py-4 bg-secondary-900 text-white rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
             >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative flex items-center gap-2 font-bold text-sm tracking-wide">
-                    <WandIcon className="w-5 h-5 text-purple-300 group-hover:text-white transition-colors animate-pulse" />
+                    <WandIcon className="w-5 h-5 text-primary-300 group-hover:text-white transition-colors animate-pulse" />
                     <span>MAGIC MATCH</span>
                 </div>
             </button>
@@ -223,8 +225,8 @@ export const AgentHub: React.FC = () => {
         {(prefs.favorites.length > 0 || prefs.recents.length > 0) && (
             <div className="mb-10">
                  <div className="flex items-center gap-2 mb-4 px-1">
-                    <StarIcon className="w-4 h-4 text-amber-400" filled />
-                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Acesso Rápido</h3>
+                    <StarIcon className="w-4 h-4 text-warning-500" filled />
+                    <h3 className="text-sm font-bold text-secondary-700 uppercase tracking-wider">Acesso Rápido</h3>
                  </div>
                  
                  <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent -mx-4 px-4">
@@ -267,19 +269,15 @@ export const AgentHub: React.FC = () => {
                 {/* Categories */}
                 <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-1 px-1">
                     {categories.map(cat => (
-                        <button
+                        <Button
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
-                            className={`
-                                px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap
-                                ${selectedCategory === cat 
-                                    ? 'bg-gray-900 text-white shadow-md' 
-                                    : 'bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-900'
-                                }
-                            `}
+                            variant={selectedCategory === cat ? 'primary' : 'ghost'}
+                            size="sm"
+                            className={selectedCategory === cat ? 'shadow-md' : 'text-gray-500 hover:text-gray-900'}
                         >
                             {cat}
-                        </button>
+                        </Button>
                     ))}
                 </div>
 
@@ -312,19 +310,18 @@ export const AgentHub: React.FC = () => {
                 ))}
             </div>
         ) : (
-            <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-dashed border-gray-200">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                    <SearchIcon className="w-8 h-8 text-gray-300" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">Nenhum agente encontrado</h3>
-                <p className="text-gray-500 text-sm mt-1">Tente ajustar seus filtros ou busca.</p>
-                <button 
-                    onClick={() => {setSearchTerm(''); setSelectedCategory('Todos');}}
-                    className="mt-4 px-4 py-2 text-indigo-600 bg-indigo-50 rounded-lg font-bold text-sm hover:bg-indigo-100 transition-colors"
-                >
-                    Limpar Filtros
-                </button>
-            </div>
+            <EmptyState
+                icon={<SearchIcon className="w-8 h-8" />}
+                title="Nenhum agente encontrado"
+                description="Tente ajustar seus filtros ou busca para encontrar o agente ideal."
+                action={{
+                    label: 'Limpar Filtros',
+                    onClick: () => {setSearchTerm(''); setSelectedCategory('Todos');},
+                    variant: 'secondary'
+                }}
+                size="lg"
+                className="bg-white rounded-3xl border border-dashed border-secondary-200"
+            />
         )}
 
         {/* Modals */}

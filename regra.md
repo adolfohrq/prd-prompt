@@ -70,10 +70,128 @@ Este documento define os padrões, regras e diretrizes que **devem** ser seguido
     const section3 = results[2].status === 'fulfilled' ? results[2].value : 'Falha ao gerar';
     ```
 
-## 4. Design e UI/UX
+## 4. Design System e UI/UX
+
+### 4.1. Design System (Atualizado em 22 Nov 2025)
+
+**O projeto possui um Design System completo e centralizado. É OBRIGATÓRIO utilizá-lo.**
+
+**Arquivos do Design System:**
+*   `designSystem.ts`: Todos os design tokens (cores, espaçamento, tipografia, sombras, border radius)
+*   `DESIGN_SYSTEM.md`: Documentação completa com exemplos de uso
+*   `index.html`: Configuração do Tailwind com cores semânticas
+
+**Regras CRÍTICAS:**
+
+1. **✅ SEMPRE usar componentes do Design System ao invés de criar estilos customizados com Tailwind**
+   ```tsx
+   // ✅ CORRETO
+   import { Button } from '../components/Button';
+   <Button variant="primary">Salvar</Button>
+
+   // ❌ ERRADO
+   <button className="bg-purple-600 text-white px-4 py-2 rounded-lg">Salvar</button>
+   ```
+
+2. **✅ SEMPRE usar tokens de cores semânticos (NUNCA usar classes Tailwind de cores diretas)**
+   ```tsx
+   // ✅ CORRETO
+   <div className="bg-primary-600 text-white">
+   <div className="text-secondary-800">
+   <div className="bg-success-100 text-success-700">
+
+   // ❌ ERRADO
+   <div className="bg-purple-600 text-white">
+   <div className="text-gray-800">
+   <div className="bg-green-100 text-green-700">
+   ```
+
+3. **✅ NUNCA usar valores arbitrários** - Sempre usar tokens do design system
+   ```tsx
+   // ❌ ERRADO
+   <div className="w-[342px] text-[#FF5733]">
+
+   // ✅ CORRETO
+   <div className="w-full text-primary-600">
+   ```
+
+4. **✅ NUNCA duplicar código de UI** - Se você está criando um elemento visual mais de uma vez, extraia para um componente
+
+**Componentes Disponíveis:**
+
+| Componente | Uso | Variantes |
+|------------|-----|-----------|
+| `Button` | Botões de ação | `primary`, `secondary`, `danger`, `ghost` |
+| `Badge` | Tags, labels, status | `primary`, `success`, `error`, `warning`, `info`, `gray` |
+| `Alert` | Mensagens de feedback | `success`, `error`, `warning`, `info` |
+| `Avatar` | Foto de perfil com fallback de iniciais | Tamanhos: `xs`, `sm`, `md`, `lg`, `xl` |
+| `IconButton` | Botão apenas com ícone | Mesmas variantes do `Button` |
+| `Skeleton` | Estados de loading | `text`, `circular`, `rectangular` + variantes especiais |
+| `Input` | Campo de entrada de texto | Com suporte a tooltip e label |
+| `Select` | Campo de seleção | Com suporte a tooltip e label |
+| `Textarea` | Campo de texto multilinha | Com contador de caracteres |
+| `Card` | Container para conteúdo | Com título e ações opcionais |
+| `Modal` | Dialogs e overlays | 8 tamanhos (`sm` a `5xl`) |
+
+**Tokens de Cores Semânticos:**
+
+```typescript
+// Cores Primárias (Roxo/Violeta)
+primary-50, primary-100, ..., primary-900
+
+// Cores Secundárias (Cinza)
+secondary-50, secondary-100, ..., secondary-900
+
+// Cores Semânticas
+success-*   // Verde (feedback positivo)
+error-*     // Vermelho (erros)
+warning-*   // Amarelo (avisos)
+info-*      // Azul (informações)
+```
+
+**Exemplo Completo de Uso:**
+
+```tsx
+import { Button } from '../components/Button';
+import { Badge } from '../components/Badge';
+import { Alert } from '../components/Alert';
+import { Card } from '../components/Card';
+
+function MyView() {
+  const [error, setError] = useState('');
+
+  return (
+    <div className="space-y-6">
+      {/* ✅ Usando componente Alert */}
+      {error && (
+        <Alert variant="error" onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
+      {/* ✅ Usando Card com Badge */}
+      <Card title="Meu Documento">
+        <div className="flex items-center justify-between mb-4">
+          <Badge variant="success" rounded="full">Novo</Badge>
+          <Badge variant="gray">3 PRDs</Badge>
+        </div>
+
+        {/* ✅ Usando cores semânticas do design system */}
+        <h2 className="text-xl font-semibold text-secondary-800">Título</h2>
+        <p className="text-sm text-secondary-600">Descrição do documento</p>
+
+        {/* ✅ Usando componente Button */}
+        <Button variant="primary" size="md">Salvar</Button>
+      </Card>
+    </div>
+  );
+}
+```
+
+### 4.2. Regras Gerais de UI/UX
 
 *   **Idioma:** Interface 100% em **Português do Brasil (PT-BR)**.
-*   **Identidade:** Roxo/Violeta (`violet-600` ou `primary`).
+*   **Identidade:** Roxo/Violeta (usar `primary-*` do design system).
 *   **Feedback:** `isLoading` em botões e `Toast` para todas as ações assíncronas.
 *   **Responsividade:** Mobile First.
 *   **Chat Contextual:** Interfaces complexas devem oferecer suporte a agentes de chat especializados (Personas) usando os componentes em `components/Chat/`.
@@ -85,6 +203,121 @@ Este documento define os padrões, regras e diretrizes que **devem** ser seguido
 *   **Uso Obrigatório:** Todas as operações de leitura/escrita devem passar por `services/databaseService.ts`.
 *   **Segregação:** Os dados (PRDs, Prompts) devem ser salvos vinculados ao `userId` do usuário logado.
 *   **Simulação:** O serviço simula latência de rede (`delay`). A UI deve tratar esses estados de carregamento (`await`).
+
+## 5.1 Roteamento e Navegação (Router Service)
+
+**Contexto:** Em novembro de 2025, foi implementado um sistema de roteamento baseado em slugs na URL usando a History API do navegador. Este sistema permite navegação com URLs amigáveis e suporte a botões voltar/avançar.
+
+### 5.1.1 Arquitetura do Router
+
+```
+services/routerService.ts    (singleton - gerencia navegação e histórico)
+hooks/useRouter.ts           (React hook - interface para componentes)
+```
+
+### 5.1.2 Mapeamento de Rotas
+
+**Rotas estáticas** (View → Slug):
+- `dashboard` → `/`
+- `generate-prd` → `/criar-prd`
+- `generate-prompt` → `/criar-prompt`
+- `my-documents` → `/meus-documentos`
+- `idea-catalog` → `/catalogo-ideias`
+- `ai-agents` → `/agentes-ia`
+- `settings` → `/configuracoes`
+
+**Rotas dinâmicas** (com parâmetros):
+- `document-viewer` → `/documento/{documentId}`
+- Query params suportados: `?action=edit`
+
+### 5.1.3 Regras de Uso
+
+*   **✅ SEMPRE usar o hook `useRouter`** em componentes que precisam navegar
+*   **❌ NUNCA manipular `window.location`** diretamente (exceto no RouterService)
+*   **✅ SEMPRE sincronizar estado** com parâmetros da URL quando relevante
+
+### 5.1.4 Como Navegar
+
+```typescript
+// ❌ Evitar: Manipulação direta
+window.location.href = '/criar-prd';
+
+// ✅ Correto: Usar useRouter hook
+import { useRouter } from '../hooks/useRouter';
+
+const MyComponent = () => {
+  const { navigate } = useRouter();
+
+  // Navegação simples
+  navigate('generate-prd');
+
+  // Navegação com parâmetros
+  navigate('document-viewer', { documentId: 'abc123' });
+};
+```
+
+### 5.1.5 Como Acessar View e Parâmetros Atuais
+
+```typescript
+import { useRouter } from '../hooks/useRouter';
+
+const MyComponent = () => {
+  const { currentView, params } = useRouter();
+
+  // currentView: 'document-viewer'
+  // params: { documentId: 'abc123' }
+
+  if (currentView === 'document-viewer' && params.documentId) {
+    // Lógica específica da view
+  }
+};
+```
+
+### 5.1.6 Navegação do Histórico
+
+```typescript
+const { back, forward } = useRouter();
+
+// Voltar página
+back();
+
+// Avançar página
+forward();
+```
+
+### 5.1.7 Sincronização de Estado com URL
+
+**IMPORTANTE:** Quando o estado da aplicação depende de parâmetros na URL (ex: documento sendo visualizado), **SEMPRE** sincronizar com `useEffect`:
+
+```typescript
+useEffect(() => {
+  if (currentView === 'document-viewer' && params.documentId) {
+    // Buscar documento pelo ID
+    const doc = documents.find(d => d.id === params.documentId);
+    if (doc) {
+      setSelectedDocument(doc);
+    } else {
+      // Redirecionar se não encontrado
+      navigate('my-documents');
+    }
+  }
+}, [currentView, params.documentId, navigate]);
+```
+
+### 5.1.8 Comportamento do Histórico
+
+*   **`navigate()`**: Adiciona nova entrada ao histórico (botão voltar funciona)
+*   **`replace()`**: Substitui entrada atual (não adiciona ao histórico)
+*   **Popstate**: RouterService escuta eventos `popstate` automaticamente
+
+### 5.1.9 Benefícios
+
+✅ **URLs compartilháveis**: Usuário pode copiar/colar URLs
+✅ **Botões voltar/avançar**: Funcionam nativamente no navegador
+✅ **Bookmarks**: URLs podem ser salvos como favoritos
+✅ **SEO-friendly**: Slugs em português são descritivos
+✅ **Deep linking**: Acesso direto a documentos específicos
+✅ **SPA nativo**: Sem recarregar página
 
 ## 6. Manutenibilidade
 
@@ -190,14 +423,23 @@ export const MyView = () => {
 *   **Renderização condicional complexa:** Extrair para components `steps/`
 *   **Muitos handlers (>10):** Extrair para custom hooks
 
-### 7.6 Benefícios Comprovados (Caso GeneratePrd)
+### 7.6 Benefícios Comprovados
 
-*   ✅ **Redução de código:** 67% menor no arquivo principal
+#### Caso 1: GeneratePrd (Novembro 2025)
+*   ✅ **Redução de código:** 67% menor no arquivo principal (1.200 → 393 linhas)
 *   ✅ **Testabilidade:** Cada componente pode ser testado isoladamente
 *   ✅ **Manutenibilidade:** Fácil localizar e modificar funcionalidades
 *   ✅ **Reutilização:** Componentes e hooks podem ser usados em outros contextos
 *   ✅ **Type Safety:** 100% TypeScript, zero erros
 *   ✅ **Performance:** Sem regressão (build em 2.10s)
+
+#### Caso 2: DocumentViewer (Novembro 2025)
+*   ✅ **Redução de código:** 56.8% menor no arquivo principal (519 → 224 linhas)
+*   ✅ **Modularização:** 5 tabs + 2 hooks = 12 arquivos modulares (449 linhas total)
+*   ✅ **Imports limpos:** Barrel exports (`index.ts`) em todas as pastas
+*   ✅ **Type Safety:** 100% TypeScript com interfaces explícitas
+*   ✅ **Performance:** Build em 2.31s (sem regressão)
+*   ✅ **Reutilização:** Hooks de chat e export reutilizáveis em outras views
 
 ## 8. Fluxo de Desenvolvimento
 

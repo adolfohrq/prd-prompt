@@ -165,7 +165,7 @@ export const geminiService = {
       Com base nela, extraia ou sugira informações profissionais para um PRD (Product Requirement Document).
       Retorne um JSON com:
       - title: Um nome comercial criativo e profissional para o produto.
-      - industry: A indústria principal (ex: Fintech, EdTech, HealthTech).
+      - industry: Um array de 3 a 5 tags de indústria/mercado (ex: ["Fintech", "Mobile Banking", "Segurança"]).
       - targetAudience: Uma descrição concisa do público-alvo.
       - complexity: A complexidade estimada ('Baixa', 'Média' ou 'Alta').
       - ideaDescription: Uma versão refinada e mais profissional da descrição da ideia (max 2 frases).`;
@@ -174,7 +174,7 @@ export const geminiService = {
         type: Type.OBJECT,
         properties: {
             title: { type: Type.STRING },
-            industry: { type: Type.STRING },
+            industry: { type: Type.ARRAY, items: { type: Type.STRING } },
             targetAudience: { type: Type.STRING },
             complexity: { type: Type.STRING, enum: ['Baixa', 'Média', 'Alta'] },
             ideaDescription: { type: Type.STRING }
@@ -191,10 +191,11 @@ export const geminiService = {
 
   generatePrdSection: async (section: string, prdInfo: Partial<PRD>): Promise<string> => {
     const { title, ideaDescription, industry, targetAudience } = prdInfo;
+    const industryText = Array.isArray(industry) ? industry.join(', ') : industry;
     const basePrompt = `Com base na seguinte ideia de produto:
     - Título: ${title}
     - Descrição: ${ideaDescription}
-    - Indústria: ${industry}
+    - Indústria: ${industryText}
     - Público-alvo: ${targetAudience}
     
     Gere a seção "${section}" para um Documento de Requisitos do Produto (PRD). Seja claro, conciso e profissional. Use Markdown para formatação (negrito, listas).`;
@@ -205,11 +206,11 @@ export const geminiService = {
     return await geminiImpl.generateText(currentModel, basePrompt);
   },
 
-  generateCompetitors: async (industry: string): Promise<Competitor[] | null> => {
+  generateCompetitors: async (industry: string | string[]): Promise<Competitor[] | null> => {
     // Note: Groq models do NOT support Google Search Tooling natively yet.
     // We must use the fallback text generation logic for Groq.
-    
-    const fallbackPrompt = `Liste 3 concorrentes diretos ou indiretos na indústria de "${industry}". Forneça uma breve análise (notas) e o link para o site de cada um.`;
+    const industryText = Array.isArray(industry) ? industry.join(', ') : industry;
+    const fallbackPrompt = `Liste 3 concorrentes diretos ou indiretos na indústria de "${industryText}". Forneça uma breve análise (notas) e o link para o site de cada um.`;
     const schema = {
         type: Type.ARRAY,
         items: {
@@ -230,7 +231,7 @@ export const geminiService = {
     } else {
         // Original Gemini Logic (supports Search Tool)
         const prompt = `
-        Using Google Search, list 3 REAL competitors in the "${industry}" industry.
+        Using Google Search, list 3 REAL competitors in the "${industryText}" industry.
         Return strict JSON array: [{"name": "Comp1", "notes": "Analysis", "link": "url"}].
         `;
 
@@ -267,9 +268,10 @@ export const geminiService = {
     return [];
   },
 
-  analyzeCompetitorDeeply: async (competitorName: string, industry: string, briefContext: string): Promise<CompetitorDetails | null> => {
+  analyzeCompetitorDeeply: async (competitorName: string, industry: string | string[], briefContext: string): Promise<CompetitorDetails | null> => {
+    const industryText = Array.isArray(industry) ? industry.join(', ') : industry;
     const prompt = `Aja como um Analista de Mercado Sênior.
-    Analise profundamente o concorrente "${competitorName}" do setor de "${industry}".
+    Analise profundamente o concorrente "${competitorName}" do setor de "${industryText}".
     Contexto breve que já temos: "${briefContext}".
 
     Retorne um JSON estrito com:
@@ -436,7 +438,7 @@ export const geminiService = {
 
   generateLogo: async (
     title: string, 
-    industry: string, 
+    industry: string | string[], 
     options: { 
         style?: string; 
         color?: string; 
@@ -447,8 +449,8 @@ export const geminiService = {
     // LOGO GENERATION IS SPECIAL
     // Groq models are TEXT ONLY. They cannot generate images.
     // We will use Groq for the CONCEPT (text), but we must force Gemini for the IMAGE generation.
-    
-    let promptInstruction = `Atue como Designer. Crie conceito de marca para: Produto "${title}", Indústria "${industry}".`;
+    const industryText = Array.isArray(industry) ? industry.join(', ') : industry;
+    let promptInstruction = `Atue como Designer. Crie conceito de marca para: Produto "${title}", Indústria "${industryText}".`;
     
     // Injeção de opções avançadas
     if (options.customPrompt) {

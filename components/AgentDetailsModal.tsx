@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import type { SpecialistAgent } from '../../types';
 import { CheckIcon, XIcon, ChatIcon, CodeIcon, CopyIcon, RobotIcon, ChevronDownIcon, ChevronUpIcon } from './icons/Icons';
 import { Button } from './Button';
+import { IconButton } from './IconButton';
 
 interface AgentDetailsModalProps {
   agent: SpecialistAgent | null;
@@ -67,9 +68,13 @@ export const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ agent, isO
                         </div>
                         <p className="text-white/90 font-medium">{agent.role}</p>
                      </div>
-                     <button onClick={onClose} className="text-white/70 hover:text-white hover:bg-white/20 p-2 rounded-full transition-colors">
-                         <XIcon className="w-6 h-6" />
-                     </button>
+                     <IconButton 
+                        icon={<XIcon />} 
+                        ariaLabel="Fechar" 
+                        onClick={onClose} 
+                        variant="ghost" 
+                        className="text-white/70 hover:text-white hover:bg-white/20"
+                    />
                 </div>
             </div>
 
@@ -143,29 +148,31 @@ export const AgentDetailsModal: React.FC<AgentDetailsModalProps> = ({ agent, isO
 
                 {/* System Prompt (Collapsible) */}
                 <div className="border-t border-gray-100 pt-4">
-                    <button 
+                    <Button 
+                        variant="ghost"
                         onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-                        className="flex items-center justify-between w-full text-left text-gray-500 hover:text-gray-800 transition-colors group"
+                        className="w-full justify-between text-gray-500 hover:text-gray-800 group px-0 hover:bg-transparent"
                     >
                         <div className="flex items-center gap-2">
                             <CodeIcon className="w-4 h-4" />
                             <span className="text-xs font-bold uppercase tracking-wide">Ver Prompt de Sistema</span>
                         </div>
                         {showSystemPrompt ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
-                    </button>
+                    </Button>
 
                     {showSystemPrompt && (
                         <div className="mt-3 relative group/code animate-fade-in">
                             <pre className="bg-gray-900 text-gray-300 p-4 rounded-lg text-xs font-mono whitespace-pre-wrap border border-gray-800 shadow-inner max-h-48 overflow-y-auto">
                                 {agent.systemInstruction}
                             </pre>
-                            <button 
+                            <IconButton 
+                                icon={copied ? <CheckIcon className="w-3 h-3 text-green-400" /> : <CopyIcon className="w-3 h-3" />}
+                                ariaLabel="Copiar Prompt"
                                 onClick={handleCopyPrompt}
-                                className="absolute top-2 right-2 p-1.5 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors opacity-0 group-hover/code:opacity-100"
-                                title="Copiar Prompt"
-                            >
-                                {copied ? <CheckIcon className="w-3 h-3 text-green-400" /> : <CopyIcon className="w-3 h-3" />}
-                            </button>
+                                size="sm"
+                                variant="ghost"
+                                className="absolute top-2 right-2 bg-gray-700 text-white hover:bg-gray-600 opacity-0 group-hover/code:opacity-100"
+                            />
                         </div>
                     )}
                 </div>

@@ -3,6 +3,8 @@ import React from 'react';
 import { Modal } from './Modal';
 import { Competitor } from '../../types';
 import { CheckIcon, XIcon, GlobeIcon, InfoIcon, BulbIcon, TrendingUpIcon, UsersIcon, TagIcon, ExternalLinkIcon } from './icons/Icons';
+import { Button } from './Button';
+import { IconButton } from './IconButton';
 
 interface CompetitorModalProps {
   competitor: Competitor | null;
@@ -39,12 +41,13 @@ export const CompetitorModal: React.FC<CompetitorModalProps> = ({ competitor, is
                     </div>
                     
                     <div className="flex items-center gap-3 shrink-0">
-                        <button 
+                        <Button 
+                            variant="ghost"
                             onClick={onClose}
-                            className="px-4 py-2.5 text-slate-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors text-sm font-medium"
+                            className="text-slate-300 hover:bg-white/10 hover:text-white"
                         >
                             Fechar
-                        </button>
+                        </Button>
                         {competitor?.link && (
                             <a 
                                 href={competitor.link} 
@@ -223,9 +226,9 @@ export const CompetitorModal: React.FC<CompetitorModalProps> = ({ competitor, is
             <div className="flex flex-col items-center justify-center py-24 text-red-500">
                 <XIcon className="w-12 h-12 mb-4 opacity-20" />
                 <p className="font-medium text-lg">Detalhes indisponíveis.</p>
-                <button onClick={onClose} className="mt-4 text-sm font-medium text-gray-500 hover:text-gray-800 underline transition-colors">
+                <Button variant="ghost" onClick={onClose} className="mt-4 underline text-gray-500">
                     Fechar Janela
-                </button>
+                </Button>
             </div>
         )}
     </Modal>

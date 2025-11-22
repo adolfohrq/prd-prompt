@@ -21,10 +21,11 @@ export interface PRD {
   userId: string; // Foreign Key
   title: string;
   ideaDescription: string;
-  industry: string;
+  industry: string[];
   targetAudience: string;
   complexity: 'Baixa' | 'Média' | 'Alta';
   createdAt: Date;
+  status: 'draft' | 'completed';
   content: {
     executiveSummary?: string;
     productOverview?: string;
@@ -120,6 +121,12 @@ export interface Idea {
   title: string;
   description: string;
   category: string;
+}
+
+export interface IdeaAnalysis {
+  quality: 'Baixa' | 'Média' | 'Alta';
+  complexity: 'Baixa' | 'Média' | 'Alta';
+  feedback: string;
 }
 
 export interface ToastMessage {

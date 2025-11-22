@@ -1,5 +1,5 @@
 import { useState, useCallback, useContext } from 'react';
-import type { PRD, Competitor } from '../../../types';
+import type { PRD, Competitor, IdeaAnalysis } from '../../../types';
 import { geminiService } from '../../../services/geminiService';
 import { AppContext } from '../../../contexts/AppContext';
 import type { TaskStatus } from '../types';
@@ -21,6 +21,8 @@ interface UsePrdGenerationProps {
   creativeElements: string;
   creativeNegative: string;
   setTurboTasks: React.Dispatch<React.SetStateAction<Array<{ id: string; label: string; status: TaskStatus }>>>;
+  setSmartFillingFields: React.Dispatch<React.SetStateAction<string[]>>;
+  setIdeaAnalysis: React.Dispatch<React.SetStateAction<IdeaAnalysis | null>>;
 }
 
 export const usePrdGeneration = ({
@@ -39,7 +41,9 @@ export const usePrdGeneration = ({
   creativeTypography,
   creativeElements,
   creativeNegative,
-  setTurboTasks
+  setTurboTasks,
+  setSmartFillingFields,
+  setIdeaAnalysis
 }: UsePrdGenerationProps) => {
   const appContext = useContext(AppContext);
 
@@ -73,6 +77,7 @@ export const usePrdGeneration = ({
     }
     setIsLoading(true);
     setLoadingMessage('Analisando sua ideia e preenchendo campos...');
+    setSmartFillingFields(['title', 'industry', 'targetAudience']); // Inicia o feedback visual
     try {
       const suggestions = await geminiService.suggestPrdMetadata(prdData.ideaDescription);
       if (suggestions) {
@@ -89,12 +94,33 @@ export const usePrdGeneration = ({
       appContext?.showToast('Erro no preenchimento inteligente.', 'error');
     } finally {
       setIsLoading(false);
+      setSmartFillingFields([]); // Limpa o feedback visual
+    }
+  };
+
+  const handleAnalyzeIdea = async () => {
+    if (!prdData.ideaDescription) {
+        appContext?.showToast('Por favor, escreva a descrição da ideia para analisá-la.', 'error');
+        return;
+    };
+    setIsLoading(true); 
+    setLoadingMessage('Analisando ideia...');
+
+    const prompt = `Analise a seguinte ideia de produto e retorne uma avaliação concisa. Ideia: "${prdData.ideaDescription}". Avalie a qualidade (potencial de mercado, clareza) e a complexidade de implementação. Forneça um feedback curto (1 frase).`;
+    
+    try {
+      const analysis = await geminiService.generateJSON<IdeaAnalysis>(prompt);
+      setIdeaAnalysis(analysis);
+    } catch (error) {
+      appContext?.showToast('Erro ao analisar a ideia.', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGeneratePrdStructure = async () => {
-    if (!prdData.title || !prdData.ideaDescription || !prdData.industry || !prdData.targetAudience) {
-      appContext?.showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+    if (!prdData.title || !prdData.ideaDescription || !prdData.industry || prdData.industry.length === 0 || !prdData.targetAudience) {
+      appContext?.showToast('Por favor, preencha todos os campos obrigatórios, incluindo ao menos uma tag de indústria.', 'error');
       return;
     }
     setIsLoading(true);
@@ -253,7 +279,7 @@ export const usePrdGeneration = ({
     try {
       const details = await geminiService.analyzeCompetitorDeeply(
         competitor.name,
-        prdData.industry || '',
+        prdData.industry || [],
         competitor.notes
       );
 
@@ -286,6 +312,7 @@ export const usePrdGeneration = ({
     handleRegenerate,
     handleDownloadLogo,
     handleGenerateDbCode,
-    updateTaskStatus
+    updateTaskStatus,
+    handleAnalyzeIdea
   };
 };

@@ -167,17 +167,32 @@ class DatabaseService {
         })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     }
 
+    async getPrdById(id: string, userId: string): Promise<PRD | null> {
+        await delay(200);
+        const allPrds = this.getListFromStorage<PRD>(STORAGE_KEYS.PRDS);
+        const prd = allPrds.find(p => p.id === id && p.userId === userId);
+        if (!prd) return null;
+        return { ...prd, createdAt: new Date(prd.createdAt) };
+    }
+
     async createPrd(prd: PRD): Promise<PRD> {
         await delay(500);
-        const allPrds = this.getListFromStorage<PRD>(STORAGE_KEYS.PRDS);
+        let allPrds = this.getListFromStorage<PRD>(STORAGE_KEYS.PRDS);
         
-        // Ensure ID uniqueness if passed from UI, or generate new one
         if (!prd.id) prd.id = this.generateId();
 
-        const newPrds = [prd, ...allPrds]; // Add to global list
+        const existingIndex = allPrds.findIndex(p => p.id === prd.id);
+
+        if (existingIndex >= 0) {
+            // Update existing PRD (for drafts)
+            allPrds[existingIndex] = { ...allPrds[existingIndex], ...prd };
+        } else {
+            // Add new PRD
+            allPrds.unshift(prd);
+        }
         
         try {
-            this.saveToStorage(STORAGE_KEYS.PRDS, newPrds);
+            this.saveToStorage(STORAGE_KEYS.PRDS, allPrds);
         } catch (e: any) {
             if (e.message === "STORAGE_FULL") {
                 throw new Error("Armazenamento cheio! Exclua documentos antigos ou imagens para salvar novos.");

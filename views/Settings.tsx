@@ -4,6 +4,8 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Select } from '../components/Select';
 import { Input } from '../components/Input';
+import { Alert } from '../components/Alert';
+import { Badge } from '../components/Badge';
 import { geminiService } from '../services/geminiService';
 import { db } from '../services/databaseService';
 import { AppContext } from '../contexts/AppContext';
@@ -121,8 +123,8 @@ export const Settings: React.FC = () => {
 
     return (
         <div className="max-w-3xl mx-auto pb-10">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Configurações</h1>
-            <p className="text-lg text-gray-600 mb-8">Gerencie modelos de IA e dados do sistema.</p>
+            <h1 className="text-3xl font-bold text-secondary-900 mb-2">Configurações</h1>
+            <p className="text-lg text-secondary-600 mb-8">Gerencie modelos de IA e dados do sistema.</p>
 
             <div className="space-y-8">
                 {/* Model Settings */}
@@ -157,29 +159,29 @@ export const Settings: React.FC = () => {
                         
                         {/* Conditional Input for Groq Key */}
                         {isGroq && (
-                            <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg animate-fade-in">
-                                <h4 className="text-sm font-bold text-orange-800 mb-2">Configuração Groq Cloud</h4>
-                                <p className="text-xs text-orange-700 mb-3">
-                                    Para usar modelos Open Source (Llama, DeepSeek, Gemma), você precisa de uma API Key gratuita da Groq. 
+                            <Alert variant="warning" className="animate-fade-in">
+                                <h4 className="text-sm font-bold mb-2">Configuração Groq Cloud</h4>
+                                <p className="text-xs mb-3">
+                                    Para usar modelos Open Source (Llama, DeepSeek, Gemma), você precisa de uma API Key gratuita da Groq.
                                     <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="underline font-bold ml-1">Obter Chave aqui</a>.
                                 </p>
-                                <Input 
-                                    label="Groq API Key (gsk_...)" 
-                                    id="groqKey" 
-                                    type="password" 
-                                    value={groqKey} 
+                                <Input
+                                    label="Groq API Key (gsk_...)"
+                                    id="groqKey"
+                                    type="password"
+                                    value={groqKey}
                                     onChange={handleGroqKeyChange}
                                     placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxx"
                                 />
-                            </div>
+                            </Alert>
                         )}
                     </div>
 
-                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <div className="bg-secondary-50 p-6 rounded-lg border border-secondary-200">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                             <div>
-                                <h3 className="text-md font-medium text-gray-900">Validação de Conexão</h3>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <h3 className="text-md font-medium text-secondary-900">Validação de Conexão</h3>
+                                <p className="text-xs text-secondary-500 mt-1">
                                     {isGroq ? "Testar conexão com servidores da Groq." : "Testar conexão com Google AI Studio."}
                                 </p>
                             </div>
@@ -197,22 +199,22 @@ export const Settings: React.FC = () => {
 
                         <div className="flex items-center min-h-[2rem]">
                             {apiKeyStatus === 'valid' && (
-                                <span className="inline-flex items-center text-sm font-medium text-green-700">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                <Badge variant="success" size="lg" className="flex items-center">
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                                     Conexão validada com sucesso!
-                                </span>
+                                </Badge>
                             )}
                             {apiKeyStatus === 'invalid' && (
-                                <span className="inline-flex items-center text-sm font-medium text-red-700">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <Badge variant="error" size="lg" className="flex items-center">
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     {validationMessage}
-                                </span>
+                                </Badge>
                             )}
                         </div>
                         
                         {apiKeyStatus === 'valid' && (
-                            <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end animate-fade-in">
-                                <Button onClick={handleSave} size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-md w-full md:w-auto">
+                            <div className="mt-6 pt-4 border-t border-secondary-200 flex justify-end animate-fade-in">
+                                <Button onClick={handleSave} variant="primary" size="lg" className="shadow-md w-full md:w-auto">
                                     💾 Salvar e Aplicar Configurações
                                 </Button>
                             </div>
@@ -221,22 +223,22 @@ export const Settings: React.FC = () => {
                 </Card>
 
                 {/* Danger Zone */}
-                <div className="border border-red-200 rounded-xl overflow-hidden bg-white">
-                    <div className="bg-red-50 px-6 py-4 border-b border-red-100">
-                         <h3 className="text-lg font-bold text-red-800 flex items-center">
+                <div className="border border-error-200 rounded-xl overflow-hidden bg-white">
+                    <div className="bg-error-50 px-6 py-4 border-b border-error-100">
+                         <h3 className="text-lg font-bold text-error-800 flex items-center">
                             ⚠️ Zona de Perigo
                          </h3>
                     </div>
                     <div className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
-                            <h4 className="text-md font-medium text-gray-900">Resetar Banco de Dados</h4>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <h4 className="text-md font-medium text-secondary-900">Resetar Banco de Dados</h4>
+                            <p className="text-sm text-secondary-600 mt-1">
                                 Apaga todos os dados locais. Use se o aplicativo apresentar problemas.
                             </p>
                         </div>
-                        <Button 
-                            onClick={handleResetDatabase} 
-                            variant="danger" 
+                        <Button
+                            onClick={handleResetDatabase}
+                            variant="danger"
                             isLoading={isResetting}
                             className="shrink-0"
                         >

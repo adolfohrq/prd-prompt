@@ -120,8 +120,8 @@ export const GeneratePrompt: React.FC<GeneratePromptProps> = ({ prds, onSaveProm
   return (
     <div className="max-w-6xl mx-auto pb-12">
       <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Engenharia de Prompt Avançada</h1>
-          <p className="mt-1 text-gray-600">Transforme PRDs em instruções de código otimizadas para sua IA favorita.</p>
+          <h1 className="text-3xl font-bold text-secondary-900">Engenharia de Prompt Avançada</h1>
+          <p className="mt-1 text-secondary-600">Transforme PRDs em instruções de código otimizadas para sua IA favorita.</p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -162,16 +162,18 @@ export const GeneratePrompt: React.FC<GeneratePromptProps> = ({ prds, onSaveProm
             <Card title="2. Stack Tecnológica">
                 <div className="space-y-4">
                     <div>
-                        <span className="block text-sm font-medium text-gray-700 mb-2">Templates Rápidos</span>
+                        <span className="block text-sm font-medium text-secondary-700 mb-2">Templates Rápidos</span>
                         <div className="flex flex-wrap gap-2">
                             {quickStacks.map((t) => (
-                                <button
+                                <Button
                                     key={t.name}
                                     onClick={() => applyTemplate(t)}
-                                    className="px-3 py-1 text-xs font-medium bg-gray-100 hover:bg-purple-100 hover:text-purple-700 text-gray-700 rounded-full border border-gray-200 transition-colors"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="rounded-full text-xs py-1 h-auto bg-gray-100 border border-gray-200 hover:bg-primary-100 hover:text-primary-700 hover:border-primary-200"
                                 >
                                     {t.name}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>
@@ -183,29 +185,29 @@ export const GeneratePrompt: React.FC<GeneratePromptProps> = ({ prds, onSaveProm
 
             {/* 3. Context Control */}
             <Card title="3. Contexto do PRD">
-                <p className="text-sm text-gray-500 mb-4">Selecione quais partes do PRD incluir no prompt para economizar tokens e focar a IA.</p>
+                <p className="text-sm text-secondary-500 mb-4">Selecione quais partes do PRD incluir no prompt para economizar tokens e focar a IA.</p>
                 <div className="space-y-3">
-                    <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${includeUi ? 'bg-purple-50 border-purple-200' : 'bg-white hover:bg-gray-50'}`}>
+                    <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${includeUi ? 'bg-primary-50 border-purple-200' : 'bg-white hover:bg-gray-50'}`}>
                         <input type="checkbox" checked={includeUi} onChange={(e) => setIncludeUi(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
                         <div className="ml-3 flex items-center">
-                            <LayoutIcon className="h-4 w-4 text-gray-500 mr-2" />
-                            <span className="text-sm font-medium text-gray-700">Plano de UI & Telas</span>
+                            <LayoutIcon className="h-4 w-4 text-secondary-500 mr-2" />
+                            <span className="text-sm font-medium text-secondary-700">Plano de UI & Telas</span>
                         </div>
                     </label>
                     
-                    <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${includeDb ? 'bg-purple-50 border-purple-200' : 'bg-white hover:bg-gray-50'}`}>
+                    <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${includeDb ? 'bg-primary-50 border-purple-200' : 'bg-white hover:bg-gray-50'}`}>
                         <input type="checkbox" checked={includeDb} onChange={(e) => setIncludeDb(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
                         <div className="ml-3 flex items-center">
-                            <DatabaseIcon className="h-4 w-4 text-gray-500 mr-2" />
-                            <span className="text-sm font-medium text-gray-700">Schema do Banco de Dados</span>
+                            <DatabaseIcon className="h-4 w-4 text-secondary-500 mr-2" />
+                            <span className="text-sm font-medium text-secondary-700">Schema do Banco de Dados</span>
                         </div>
                     </label>
 
-                    <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${includeCompetitors ? 'bg-purple-50 border-purple-200' : 'bg-white hover:bg-gray-50'}`}>
+                    <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${includeCompetitors ? 'bg-primary-50 border-purple-200' : 'bg-white hover:bg-gray-50'}`}>
                         <input type="checkbox" checked={includeCompetitors} onChange={(e) => setIncludeCompetitors(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
                         <div className="ml-3 flex items-center">
-                            <GlobeIcon className="h-4 w-4 text-gray-500 mr-2" />
-                            <span className="text-sm font-medium text-gray-700">Análise de Concorrentes</span>
+                            <GlobeIcon className="h-4 w-4 text-secondary-500 mr-2" />
+                            <span className="text-sm font-medium text-secondary-700">Análise de Concorrentes</span>
                         </div>
                     </label>
                 </div>
@@ -232,7 +234,7 @@ export const GeneratePrompt: React.FC<GeneratePromptProps> = ({ prds, onSaveProm
         <div className="lg:col-span-7 flex flex-col h-full">
              <Card className="flex-grow flex flex-col h-full min-h-[600px]" title="Resultado Gerado">
                 {isLoading ? (
-                    <div className="flex-grow flex flex-col items-center justify-center text-gray-500 animate-pulse space-y-4">
+                    <div className="flex-grow flex flex-col items-center justify-center text-secondary-500 animate-pulse space-y-4">
                         <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
                             <CodeIcon className="h-6 w-6 text-primary animate-spin" />
                         </div>
@@ -250,7 +252,7 @@ export const GeneratePrompt: React.FC<GeneratePromptProps> = ({ prds, onSaveProm
                 ) : (
                     <div className="flex flex-col h-full">
                         <div className="flex items-center justify-between mb-2 px-1">
-                             <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                             <span className="text-xs font-mono text-secondary-500 bg-gray-100 px-2 py-1 rounded">
                                 {targetPlatform} Mode • {generatedPrompt.length} chars
                              </span>
                              <div className="space-x-2">

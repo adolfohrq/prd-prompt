@@ -17,6 +17,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Use `Promise.allSettled` for parallel AI generation (not `Promise.all`)
 - Always use `MarkdownRenderer` component for LLM text output
 - All UI text must be in Portuguese (PT-BR)
+- ALWAYS use `useRouter` hook for navigation (never manipulate `window.location` directly)
+- **ALWAYS use Design System components** - NEVER create custom UI elements with Tailwind directly
+- **ALWAYS use semantic color tokens** - NEVER use Tailwind color classes directly (e.g., use `bg-primary-600` instead of `bg-purple-600`)
 - Register all changes in `updates/updates.md`
 
 ## Project Overview
@@ -54,11 +57,61 @@ The app follows a clear layered architecture:
 
 ```
 App.tsx (root - auth state, view routing)
-  ├── components/           (reusable UI components)
+  ├── designSystem.ts      (design tokens - colors, spacing, etc.)
+  ├── components/          (reusable UI components following Design System)
   ├── views/               (page-level components for each feature)
   ├── services/            (business logic & API integration)
   ├── contexts/            (global state via React Context)
   └── types.ts             (TypeScript interfaces)
+```
+
+### Design System (Nov 2025)
+
+**Complete design system** with centralized tokens and reusable components:
+
+**Files:**
+- `designSystem.ts` - All design tokens (colors, spacing, typography, shadows, etc.)
+- `DESIGN_SYSTEM.md` - Complete documentation with examples
+- `index.html` - Tailwind configuration with semantic colors
+
+**Available Components:**
+- `Button` - 4 variants (primary, secondary, danger, ghost), 3 sizes
+- `Badge` - 6 variants for tags and status indicators
+- `Alert` - 4 variants (success, error, warning, info) for user feedback
+- `Avatar` - With automatic initials fallback
+- `IconButton` - Icon-only buttons with accessibility
+- `Skeleton` - Loading states (SkeletonCard, SkeletonAvatar, SkeletonTable)
+- `Input`, `Select`, `Textarea` - Form components with tooltip support
+- `Card`, `Modal` - Layout containers
+
+**Design Tokens:**
+- **Colors**: `primary-*`, `secondary-*`, `success-*`, `error-*`, `warning-*`, `info-*`
+- **Spacing**: `xs`, `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`
+- **Typography**: `text-xs` to `text-3xl`, font weights
+- **Shadows**: `shadow-sm` to `shadow-xl`
+- **Border Radius**: `rounded-sm` to `rounded-2xl`, `rounded-full`
+
+**Critical Rules:**
+1. ALWAYS use Design System components instead of creating custom Tailwind styles
+2. ALWAYS use semantic color tokens (`bg-primary-600` NOT `bg-purple-600`)
+3. NEVER use arbitrary values (`w-[342px]`) - use design tokens
+4. NEVER duplicate component UI code - extract to components/
+
+**Example Usage:**
+```tsx
+// ✅ CORRECT
+import { Button } from '../components/Button';
+import { Badge } from '../components/Badge';
+import { Alert } from '../components/Alert';
+
+<Button variant="primary" size="md">Salvar</Button>
+<Badge variant="success" rounded="full">Novo</Badge>
+<Alert variant="error">Erro ao salvar</Alert>
+
+// ❌ WRONG
+<button className="bg-purple-600 text-white px-4 py-2 rounded-lg">Salvar</button>
+<span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">Novo</span>
+<div className="bg-red-50 text-red-700">Erro ao salvar</div>
 ```
 
 ### Core Views (pages)
@@ -94,6 +147,16 @@ App.tsx (root - auth state, view routing)
 - Settings: `saveSettings()`, `getSettings()`
 - Agent preferences: `toggleFavoriteAgent()`, `getAgentPreferences()`
 
+**routerService.ts** - URL-based navigation system (Nov 2025)
+- Singleton service managing browser History API
+- Maps Views to URL slugs (e.g., `generate-prd` → `/criar-prd`)
+- `navigate(view, params?)` - Navigate to a view with optional params
+- `replace(view, params?)` - Replace current history entry
+- `getCurrentView()` - Get current view from URL
+- `getParams()` - Extract URL parameters (documentId, action, etc.)
+- `back()` / `forward()` - Browser history navigation
+- Automatically listens to `popstate` events (back/forward buttons)
+
 ### State Management
 
 **AppContext** (contexts/AppContext.ts) - Global state for:
@@ -103,6 +166,14 @@ App.tsx (root - auth state, view routing)
 - Logout function (`logout()`)
 
 State flows down via context provider in App.tsx. Components use `useContext(AppContext)` to access global state.
+
+**useRouter** (hooks/useRouter.ts) - Navigation hook for:
+- Current view from URL (`currentView`)
+- URL parameters (`params`)
+- Navigation functions (`navigate()`, `replace()`, `back()`, `forward()`)
+- URL generation (`getUrl()`)
+
+Components use this hook instead of managing view state locally.
 
 ### Key Design Patterns
 
@@ -130,6 +201,8 @@ State flows down via context provider in App.tsx. Components use `useContext(App
 6. **localStorage abstraction** via databaseService to simulate backend persistence
 
 7. **Fallback logic** in geminiService for graceful degradation between LLM providers
+
+8. **URL-based routing** via routerService for shareable URLs and browser history support (Nov 2025)
 
 ## Important Architecture Details
 
@@ -182,8 +255,9 @@ Users can switch between Gemini and Groq in Settings:
 ## Large Files to Be Aware Of
 
 - **views/GeneratePrd.tsx** (~393 lines) - **REFACTORED Nov 2025** - Main orchestrator for 6-step PRD wizard, now 67% smaller
+- **views/DocumentViewer.tsx** (~224 lines) - **REFACTORED Nov 2025** - Document viewer with 5 tabs, now 56.8% smaller
 - **geminiService.ts** (~28KB) - AI integration with fallback logic and JSON schema handling
-- **AgentHub.tsx** (~16KB) - Agent discovery, chat management, and favorites system
+- **AgentHub.tsx** (~362 lines) - Agent discovery, chat management, and favorites system (candidate for refactoring)
 
 ### GeneratePrd Component Architecture (Modular - Nov 2025)
 
@@ -231,6 +305,37 @@ components/GeneratePrd/
 - Total components: 13 reusable components
 - Testability: High (each component can be tested in isolation)
 
+### DocumentViewer Component Architecture (Modular - Nov 2025)
+
+The DocumentViewer view has been refactored following the same modular pattern:
+
+```
+components/DocumentViewer/
+├── tabs/                           (5 tab components)
+│   ├── OverviewTab.tsx            (78 lines - executive summary, metadata)
+│   ├── MarketTab.tsx              (56 lines - competitor table)
+│   ├── UiTab.tsx                  (71 lines - flowchart, screen specs)
+│   ├── DatabaseTab.tsx            (89 lines - schema cards, SQL)
+│   ├── BrandTab.tsx               (66 lines - logo, color palette)
+│   └── types.ts, index.ts
+└── hooks/                          (2 custom hooks)
+    ├── useChatHandlers.ts         (70 lines - chat by persona)
+    ├── useDocumentExport.ts       (19 lines - copy/print)
+    └── index.ts
+```
+
+**Key Architectural Decisions:**
+- **Tab Extraction**: Each PRD section (overview, market, ui, db, brand) is an isolated component
+- **Shared Hooks**: Chat and export logic reusable across views
+- **Type Safety**: Strict interfaces in `tabs/types.ts`
+- **Props Drilling**: Tab state managed in parent, passed as props
+
+**Performance:**
+- Build time: ~2.31s (no regression)
+- Code reduction: 519 → 224 lines in main file (-56.8%)
+- Total modular files: 12 files (449 lines total)
+- Reusability: Hooks can be used in other document viewers
+
 ## Type Safety
 
 All components, services, and data structures are fully typed with TypeScript:
@@ -261,11 +366,41 @@ The app uses **React 19.2.0** with React 19 APIs:
 ### Adding a New View
 
 1. Create component in `views/` directory
-2. Add route logic to App.tsx (check `currentView` state)
-3. Add sidebar navigation link in Sidebar.tsx
-4. If it needs AI generation, use geminiService or groqService
-5. Persist data via databaseService
-6. Show user feedback via `showToast()` from AppContext
+2. Add route mapping to `routerService.ts` in the `ROUTES` and `SLUG_TO_VIEW` objects
+3. Update `App.tsx` switch statement to render the new view
+4. Add sidebar navigation link in Sidebar.tsx
+5. If it needs AI generation, use geminiService or groqService
+6. Persist data via databaseService
+7. Show user feedback via `showToast()` from AppContext
+
+**Example - Adding a new "Reports" view:**
+
+```typescript
+// 1. Add to routerService.ts
+export const ROUTES = {
+  // ... existing routes
+  'reports': '/relatorios',
+};
+
+const SLUG_TO_VIEW: Record<string, View> = {
+  // ... existing mappings
+  '/relatorios': 'reports',
+};
+
+// 2. Update types.ts
+export type View =
+  | 'dashboard'
+  // ... existing views
+  | 'reports';
+
+// 3. Update App.tsx renderView()
+case 'reports':
+  return <Reports />;
+
+// 4. Use navigation in components
+const { navigate } = useRouter();
+navigate('reports');
+```
 
 ### Adding AI Generation
 

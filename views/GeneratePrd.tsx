@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import type { PRD, Competitor, ChatMessage, AgentPersona } from '../types';
+import React, { useState, useContext, useEffect } from 'react';
+import type { PRD, Competitor, ChatMessage, AgentPersona, IdeaAnalysis } from '../types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { AppContext } from '../contexts/AppContext';
@@ -13,6 +13,8 @@ import type { TurboTask, TaskStatus } from '../components/GeneratePrd/types';
 
 interface GeneratePrdProps {
   onSavePrd: (prd: PRD) => void;
+  editingPrd: PRD | null;
+  onCancelEditing: () => void;
 }
 
 const steps = ["Documento", "Concorrentes", "Interfaces", "Banco de Dados", "Logotipo", "Revisão Final"];
@@ -20,18 +22,31 @@ const steps = ["Documento", "Concorrentes", "Interfaces", "Banco de Dados", "Log
 // --- VISUAL STYLES NOW IMPORTED FROM constants/logoStyles.ts ---
 // --- MODAL COMPONENTS NOW IMPORTED FROM components/GeneratePrd/modals ---
 
-export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd }) => {
+export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd, editingPrd, onCancelEditing }) => {
   // Flow State
   const [currentStep, setCurrentStep] = useState(0);
   const [maxStepReached, setMaxStepReached] = useState(0); // Tracks the furthest step unlocked
   const [isPrdGenerated, setIsPrdGenerated] = useState(false); // Tracks if Step 0 content is visible
+  const [smartFillingFields, setSmartFillingFields] = useState<string[]>([]);
+  const [ideaAnalysis, setIdeaAnalysis] = useState<IdeaAnalysis | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Gerando conteúdo...');
   const [prdData, setPrdData] = useState<Partial<PRD>>({
     complexity: 'Média',
-    content: {}
+    content: {},
+    industry: []
   });
+
+  useEffect(() => {
+    if (editingPrd) {
+      setPrdData(editingPrd);
+      // Logic to determine which step to start on could be added here
+      // For now, it will start on step 0 with data loaded.
+      setIsPrdGenerated(true); // Assume if it's a draft, the base is generated
+      setMaxStepReached(steps.length -1); // Unlock all steps for editing
+    }
+  }, [editingPrd]);
   
   // Competitor Details State
   const [selectedCompetitorIndex, setSelectedCompetitorIndex] = useState<number | null>(null);
@@ -144,12 +159,14 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd }) => {
     creativeTypography,
     creativeElements,
     creativeNegative,
-    setTurboTasks
+    setTurboTasks,
+    setSmartFillingFields,
+    setIdeaAnalysis
   });
 
   // Destructure handlers from hooks
   const { handleSendMessage, handleApplyChatChanges } = chatHandlers;
-  const { handleInputChange, handleContentChange, handleNextStep, handleSave } = formHandlers;
+  const { handleInputChange, handleContentChange, handleNextStep, handleSave, handleSaveDraft } = formHandlers;
   const {
     handleSmartFill,
     handleGeneratePrdStructure,
@@ -158,7 +175,8 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd }) => {
     handleGenerateDb,
     handleGenerateLogo,
     handleDownloadLogo,
-    handleGenerateDbCode
+    handleGenerateDbCode,
+    handleAnalyzeIdea
   } = prdGeneration;
 
   // handleCompetitorClick needs state setters so it stays in the main component
@@ -191,6 +209,10 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd }) => {
               onEditIdea={() => setIsPrdGenerated(false)}
               onInputChange={handleInputChange}
               onSmartFill={handleSmartFill}
+              smartFillingFields={smartFillingFields}
+              onAnalyzeIdea={handleAnalyzeIdea}
+              ideaAnalysis={ideaAnalysis}
+              onSaveDraft={handleSaveDraft}
             />
           </Card>
         );
@@ -268,14 +290,29 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd }) => {
   // --- RENDER MAIN ---
   return (
     <div className="max-w-5xl mx-auto pb-10 relative">
-      <div className="mb-8 flex flex-col">
-          <h1 className="text-3xl font-bold text-gray-900">Gerador de PRD</h1>
-          <p className="mt-1 text-gray-600">Crie especificações detalhadas usando IA.</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gerador de PRD</h1>
+            <p className="mt-1 text-gray-600">
+              {editingPrd ? `Editando rascunho: "${editingPrd.title}"` : 'Crie especificações detalhadas usando IA.'}
+            </p>
+          </div>
+          {editingPrd && (
+            <Button variant="secondary" onClick={() => {
+              onCancelEditing();
+              setPrdData({ complexity: 'Média', content: {}, industry: [] });
+              setCurrentStep(0);
+              setMaxStepReached(0);
+              setIsPrdGenerated(false);
+            }} className="mt-4 sm:mt-0">
+              Cancelar Edição
+            </Button>
+          )}
       </div>
 
         <div className="animate-slide-up">
             {/* INTERACTIVE STEPPER NAVIGATION (Only visible after first generation) */}
-            {(maxStepReached > 0 || isPrdGenerated) && (
+            {(maxStepReached > 0 || isPrdGenerated || editingPrd) && (
                 <div className="border-b border-gray-200 bg-white px-4 mb-8 -mx-4 sm:mx-0 sm:rounded-lg shadow-sm animate-fade-in">
                     <nav className="-mb-px flex space-x-6 overflow-x-auto no-scrollbar py-2" aria-label="Tabs">
                         {steps.map((stepName, index) => {
@@ -319,10 +356,17 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd }) => {
             {renderStepContent()}
 
             {currentStep < 5 && (
-                <div className="mt-6 flex justify-end">
-                <Button onClick={handleNextStep} isLoading={isLoading} disabled={isLoading} size="lg">
-                    {isLoading ? loadingMessage : 'Próximo Passo'}
-                </Button>
+                <div className="mt-6 flex justify-between items-center">
+                  <div>
+                    {currentStep === 0 && (
+                       <Button onClick={handleSaveDraft} variant="secondary">
+                          Salvar Rascunho
+                       </Button>
+                    )}
+                  </div>
+                  <Button onClick={handleNextStep} isLoading={isLoading} disabled={isLoading} size="lg">
+                      {isLoading ? loadingMessage : 'Próximo Passo'}
+                  </Button>
                 </div>
             )}
         </div>

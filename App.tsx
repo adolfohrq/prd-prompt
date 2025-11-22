@@ -15,6 +15,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppContext } from './contexts/AppContext';
 import { geminiService } from './services/geminiService';
 import { db } from './services/databaseService';
+import { useRouter } from './hooks/useRouter';
 import type { View, PRD, PromptDocument, ToastMessage, User } from './types';
 import { initialIdeas } from './constants';
 
@@ -23,7 +24,8 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  const [activeView, setActiveView] = useState<View>('dashboard');
+  // Router (substitui activeView state)
+  const { currentView, params, navigate } = useRouter();
   const [isLoadingData, setIsLoadingData] = useState(false);
   
   // Model State Management
@@ -35,6 +37,7 @@ const App: React.FC = () => {
 
   const [ideas] = useState(initialIdeas);
   const [selectedDocument, setSelectedDocument] = useState<PRD | PromptDocument | null>(null);
+  const [editingPrd, setEditingPrd] = useState<PRD | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -106,7 +109,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
       await db.logoutUser();
       setUser(null);
-      setActiveView('dashboard');
+      navigate('dashboard');
   };
 
   // Function to update model across the app and Persist to DB
@@ -133,7 +136,7 @@ const App: React.FC = () => {
         const savedPrd = await db.createPrd(prd);
         setPrds(prev => [savedPrd, ...prev]);
         showToast('PRD salvo no banco de dados!');
-        setActiveView('my-documents');
+        navigate('my-documents');
     } catch (e) {
         console.error(e);
         const message = e instanceof Error ? e.message : 'Erro ao salvar PRD.';
@@ -148,7 +151,7 @@ const App: React.FC = () => {
         const savedPrompt = await db.createPrompt(prompt);
         setPrompts(prev => [savedPrompt, ...prev]);
         showToast('Prompt salvo no banco de dados!');
-        setActiveView('my-documents');
+        navigate('my-documents');
     } catch (e) {
         console.error(e);
         const message = e instanceof Error ? e.message : 'Erro ao salvar Prompt.';
@@ -163,7 +166,7 @@ const App: React.FC = () => {
         setPrds(prev => prev.filter(p => p.id !== id));
         showToast('PRD excluído.', 'error');
         if (selectedDocument && 'ideaDescription' in selectedDocument && selectedDocument.id === id) {
-            setActiveView('my-documents');
+            navigate('my-documents');
             setSelectedDocument(null);
         }
     } catch (e) {
@@ -179,7 +182,7 @@ const App: React.FC = () => {
         setPrompts(prev => prev.filter(p => p.id !== id));
         showToast('Prompt excluído.', 'error');
         if (selectedDocument && !('ideaDescription' in selectedDocument) && selectedDocument.id === id) {
-            setActiveView('my-documents');
+            navigate('my-documents');
             setSelectedDocument(null);
         }
     } catch (e) {
@@ -190,8 +193,27 @@ const App: React.FC = () => {
 
   const viewDocument = (doc: PRD | PromptDocument) => {
     setSelectedDocument(doc);
-    setActiveView('document-viewer');
+    navigate('document-viewer', { documentId: doc.id });
   };
+
+  const handleEditPrd = (prd: PRD) => {
+    setEditingPrd(prd);
+    navigate('generate-prd');
+  };
+
+  // Sincroniza selectedDocument com params.documentId da URL
+  useEffect(() => {
+    if (currentView === 'document-viewer' && params.documentId && !selectedDocument) {
+      // Busca documento pelo ID na URL
+      const doc = [...prds, ...prompts].find(d => d.id === params.documentId);
+      if (doc) {
+        setSelectedDocument(doc);
+      } else {
+        // Se documento não existe, redireciona para meus documentos
+        navigate('my-documents');
+      }
+    }
+  }, [currentView, params.documentId, selectedDocument, prds, prompts, navigate]);
 
   const renderView = () => {
     if (isLoadingData) {
@@ -206,27 +228,27 @@ const App: React.FC = () => {
         );
     }
 
-    switch (activeView) {
+    switch (currentView) {
       case 'dashboard':
-        return <Dashboard setActiveView={setActiveView} prdCount={prds.length} promptCount={prompts.length} />;
+        return <Dashboard setActiveView={navigate} prdCount={prds.length} promptCount={prompts.length} />;
       case 'generate-prd':
-        return <GeneratePrd onSavePrd={addPrd} />;
+        return <GeneratePrd onSavePrd={addPrd} editingPrd={editingPrd} onCancelEditing={() => setEditingPrd(null)} />;
       case 'generate-prompt':
         return <GeneratePrompt prds={prds} onSavePrompt={addPrompt} />;
       case 'my-documents':
-        return <MyDocuments prds={prds} prompts={prompts} onDeletePrd={deletePrd} onDeletePrompt={deletePrompt} onViewDocument={viewDocument} />;
+        return <MyDocuments prds={prds} prompts={prompts} onDeletePrd={deletePrd} onDeletePrompt={deletePrompt} onViewDocument={viewDocument} onEditPrd={handleEditPrd} />;
       case 'idea-catalog':
         return <IdeaCatalog ideas={ideas} />;
       case 'ai-agents':
         return <AgentHub />;
       case 'document-viewer':
-        return selectedDocument ? 
-            <DocumentViewer document={selectedDocument} onBack={() => setActiveView('my-documents')} /> 
-            : <MyDocuments prds={prds} prompts={prompts} onDeletePrd={deletePrd} onDeletePrompt={deletePrompt} onViewDocument={viewDocument} />;
+        return selectedDocument ?
+            <DocumentViewer document={selectedDocument} onBack={() => navigate('my-documents')} />
+            : <MyDocuments prds={prds} prompts={prompts} onDeletePrd={deletePrd} onDeletePrompt={deletePrompt} onViewDocument={viewDocument} onEditPrd={handleEditPrd} />;
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard setActiveView={setActiveView} prdCount={prds.length} promptCount={prompts.length} />;
+        return <Dashboard setActiveView={navigate} prdCount={prds.length} promptCount={prompts.length} />;
     }
   };
 
@@ -244,8 +266,8 @@ const App: React.FC = () => {
       <AppContext.Provider value={{ showToast, currentModel, updateModel, user, logout: handleLogout }}>
         <div className="flex h-screen bg-gray-100 font-sans">
           <Sidebar
-              activeView={activeView}
-              setActiveView={setActiveView}
+              activeView={currentView}
+              setActiveView={navigate}
               ideaCount={ideas.length}
               currentModel={currentModel}
           />

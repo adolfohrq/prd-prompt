@@ -2,6 +2,7 @@
 import React from 'react';
 import type { SpecialistAgent } from '../../types';
 import { ChatIcon, EyeIcon, StarIcon, ArrowRightIcon } from './icons/Icons';
+import { Button } from './Button';
 
 interface AgentCardProps {
   agent: SpecialistAgent;
@@ -148,25 +149,25 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, onChat, onDetails, 
         <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-4 opacity-50" />
 
         <div className="flex items-center gap-3">
-            <button 
+            <Button 
+                variant="ghost"
+                size="sm"
                 onClick={() => onDetails(agent)}
-                className="px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-xl transition-colors flex items-center gap-2"
+                className="text-gray-500 hover:text-gray-800 hover:bg-gray-50"
             >
-                <EyeIcon className="w-4 h-4" />
-                <span>Detalhes</span>
-            </button>
+                <EyeIcon className="w-4 h-4 mr-2" />
+                Detalhes
+            </Button>
             
-            <button 
+            <Button 
+                variant="primary"
+                size="sm"
                 onClick={() => onChat(agent)}
-                className={`
-                    flex-1 py-2.5 text-sm font-bold text-white rounded-xl shadow-md
-                    flex items-center justify-center gap-2 transition-all duration-300
-                    transform active:scale-95 ${theme.button} group-hover:shadow-lg
-                `}
+                className="flex-1 shadow-md group-hover:shadow-lg"
             >
-                <span>Conversar</span>
-                <ArrowRightIcon className="w-4 h-4 opacity-70 group-hover:translate-x-1 transition-transform" />
-            </button>
+                Conversar
+                <ArrowRightIcon className="w-4 h-4 ml-2 opacity-70 group-hover:translate-x-1 transition-transform" />
+            </Button>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import React, { useContext } from 'react';
 import type { View } from '../../types';
 import { DashboardIcon, GeneratePrdIcon, GeneratePromptIcon, IdeaCatalogIcon, MyDocumentsIcon, LogoIcon, SettingsIcon, UserGroupIcon } from './icons/Icons';
 import { AppContext } from '../contexts/AppContext';
+import { Button } from './Button';
 
 interface SidebarProps {
   activeView: View;
@@ -17,17 +18,18 @@ const NavItem: React.FC<{
   isActive: boolean;
   onClick: () => void;
 }> = ({ icon, label, isActive, onClick }) => (
-  <button
+  <Button
+    variant="ghost"
     onClick={onClick}
-    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+    className={`w-full justify-start px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
       isActive
-        ? 'bg-primary/10 text-primary'
+        ? 'bg-primary/10 text-primary hover:bg-primary/15'
         : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900'
     }`}
   >
     <span className="mr-3">{icon}</span>
     {label}
-  </button>
+  </Button>
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, ideaCount, currentModel = 'gemini-2.5-flash' }) => {

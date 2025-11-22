@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import type { PRD } from '../../../types';
 import { AppContext } from '../../../contexts/AppContext';
+import { db } from '../../../services/databaseService';
 
 interface UseFormHandlersProps {
   prdData: Partial<PRD>;
@@ -27,9 +28,8 @@ export const useFormHandlers = ({
 }: UseFormHandlersProps) => {
   const appContext = useContext(AppContext);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { id, value } = e.target;
-    setPrdData(prev => ({ ...prev, [id]: value }));
+  const handleInputChange = (name: string, value: string | string[]) => {
+    setPrdData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleContentChange = (key: keyof PRD['content'], value: string) => {
@@ -46,6 +46,10 @@ export const useFormHandlers = ({
         appContext?.showToast('Preencha pelo menos o Título e a Descrição para avançar.', 'error');
         return;
       }
+       if (prdData.ideaDescription.length < 150) {
+            appContext?.showToast('Por favor, forneça uma descrição com pelo menos 150 caracteres para melhores resultados.', 'error');
+            return; 
+        }
       setMaxStepReached(Math.max(maxStepReached, 1));
       setCurrentStep(1);
       return;
@@ -66,14 +70,15 @@ export const useFormHandlers = ({
     }
 
     const finalPrd: PRD = {
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prd-${Date.now()}`,
+      id: prdData.id || '', // Keep id if editing
       userId: appContext?.user?.id || '',
-      createdAt: new Date(),
-      title: prdData.title,
+      createdAt: prdData.createdAt || new Date(),
+      title: prdData.title!,
       ideaDescription: prdData.ideaDescription || '',
-      industry: prdData.industry || 'Geral',
+      industry: prdData.industry || [],
       targetAudience: prdData.targetAudience || 'Geral',
       complexity: prdData.complexity || 'Média',
+      status: 'completed', // Mark as completed
       content: prdData.content || {}
     };
     onSavePrd(finalPrd);
@@ -82,13 +87,43 @@ export const useFormHandlers = ({
     setCurrentStep(0);
     setMaxStepReached(0);
     setIsPrdGenerated(false);
-    setPrdData({ complexity: 'Média', content: {} });
+    setPrdData({ complexity: 'Média', content: {}, industry: [] });
+  };
+
+  const handleSaveDraft = async () => {
+    if (!prdData.title) {
+      appContext?.showToast('O rascunho precisa de pelo menos um título para ser salvo.', 'error');
+      return;
+    }
+
+    const draftPrd: PRD = {
+      id: prdData.id || '', // Keep id if it exists
+      userId: appContext?.user?.id || '',
+      createdAt: prdData.createdAt || new Date(),
+      title: prdData.title!,
+      ideaDescription: prdData.ideaDescription || '',
+      industry: prdData.industry || [],
+      targetAudience: prdData.targetAudience || '',
+      complexity: prdData.complexity || 'Média',
+      status: 'draft',
+      content: prdData.content || {}
+    };
+    
+    try {
+      const savedDraft = await db.createPrd(draftPrd);
+      // Update local state with the ID from the DB
+      setPrdData(prev => ({ ...prev, id: savedDraft.id, createdAt: savedDraft.createdAt }));
+      appContext?.showToast('Rascunho salvo com sucesso!', 'success');
+    } catch (error: any) {
+      appContext?.showToast(`Erro ao salvar rascunho: ${error.message}`, 'error');
+    }
   };
 
   return {
     handleInputChange,
     handleContentChange,
     handleNextStep,
-    handleSave
+    handleSave,
+    handleSaveDraft
   };
 };

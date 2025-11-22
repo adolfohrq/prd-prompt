@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { Alert } from '../components/Alert';
 import { LogoIcon } from '../components/icons/Icons';
 import { db } from '../services/databaseService';
 import type { User } from '../types';
@@ -48,24 +49,23 @@ export const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
+        <div className="min-h-screen flex items-center justify-center bg-secondary-100 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col animate-fade-in">
-                <div className="bg-primary/5 p-8 pb-4 flex flex-col items-center">
+                <div className="bg-primary-50 p-8 pb-4 flex flex-col items-center">
                      <div className="bg-white p-3 rounded-full shadow-sm mb-4">
-                        <LogoIcon className="h-10 w-10 text-primary" />
+                        <LogoIcon className="h-10 w-10 text-primary-600" />
                      </div>
-                     <h1 className="text-2xl font-bold text-gray-800">PRD-Prompt.ai</h1>
-                     <p className="text-gray-500 text-sm mt-1">
+                     <h1 className="text-2xl font-bold text-secondary-800">PRD-Prompt.ai</h1>
+                     <p className="text-secondary-500 text-sm mt-1">
                          {isLogin ? 'Bem-vindo de volta!' : 'Crie sua conta grátis'}
                      </p>
                 </div>
 
                 <div className="p-8 pt-4">
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 flex items-center">
-                            <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <Alert variant="error" className="mb-4" onClose={() => setError('')}>
                             {error}
-                        </div>
+                        </Alert>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
@@ -109,11 +109,11 @@ export const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
                     </form>
 
                     <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-secondary-600">
                             {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}
-                            <button 
-                                onClick={() => setIsLogin(!isLogin)} 
-                                className="ml-1 text-primary font-bold hover:underline focus:outline-none"
+                            <button
+                                onClick={() => setIsLogin(!isLogin)}
+                                className="ml-1 text-primary-600 font-bold hover:underline focus:outline-none"
                             >
                                 {isLogin ? "Cadastre-se" : "Faça Login"}
                             </button>
