@@ -8,6 +8,7 @@ import { ChatDrawer } from '../components/Chat/ChatDrawer';
 import { OverviewTab, MarketTab, UiTab, DatabaseTab, BrandTab } from '../components/DocumentViewer';
 import { useChatHandlers, useDocumentExport } from '../components/DocumentViewer/hooks';
 import type { TabId } from '../components/DocumentViewer/types';
+import { designSystem } from '../designSystem';
 
 interface DocumentViewerProps {
   document: PRD | PromptDocument;
@@ -83,7 +84,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onBack
     ];
 
     return (
-      <div className="max-w-6xl mx-auto space-y-6 print:max-w-none print:space-y-0 relative">
+      <div className="mx-auto space-y-6 print:max-w-none print:space-y-0 relative" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.default }}>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden mb-6">
           <div className="flex items-center gap-3">
@@ -117,13 +118,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onBack
           <div className="border-b border-gray-200 bg-gray-50/50">
             <nav className="flex overflow-x-auto no-scrollbar" aria-label="Tabs">
               {tabs.map((tab) => (
-                <button
+                <Button
                   key={tab.id}
+                  variant="ghost"
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    group inline-flex items-center py-4 px-6 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200
+                    group inline-flex items-center py-4 px-6 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200 rounded-none h-auto
                     ${activeTab === tab.id
-                      ? 'border-primary text-primary bg-white'
+                      ? 'border-primary text-primary bg-white hover:bg-white'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'}
                   `}
                 >
@@ -131,7 +133,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onBack
                     {tab.icon}
                   </span>
                   {tab.label}
-                </button>
+                </Button>
               ))}
             </nav>
           </div>
@@ -197,7 +199,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onBack
   } else {
     // PROMPT VIEWER (Kept simple but consistent style)
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.default }}>
         <div className="flex justify-between items-center print:hidden">
           <div className="flex items-center gap-3">
             <Button variant="secondary" onClick={onBack}>← Voltar</Button>

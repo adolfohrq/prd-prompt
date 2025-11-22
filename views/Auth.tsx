@@ -111,12 +111,14 @@ export const Auth: React.FC<AuthProps> = ({ onLoginSuccess }) => {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-secondary-600">
                             {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setIsLogin(!isLogin)}
-                                className="ml-1 text-primary-600 font-bold hover:underline focus:outline-none"
+                                className="ml-1 text-primary-600 font-bold hover:text-primary-700 hover:bg-transparent hover:underline p-0 h-auto inline-flex"
                             >
                                 {isLogin ? "Cadastre-se" : "Faça Login"}
-                            </button>
+                            </Button>
                         </p>
                     </div>
                 </div>

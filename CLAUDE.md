@@ -24,32 +24,165 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**PRD-Prompt.ai** is a React 19 + TypeScript SaaS web application that uses AI (Google Gemini and Groq) to help product managers and developers generate comprehensive Product Requirement Documents, development prompts, database schemas, and UI/UX flows. The application is designed to run in Google AI Studio and uses browser localStorage for data persistence (no backend required).
+**PRD-Prompt.ai** is a React 19 + TypeScript SaaS web application that uses AI (Google Gemini and Groq) to help product managers and developers generate comprehensive Product Requirement Documents, development prompts, database schemas, and UI/UX flows. The application uses **Supabase** (PostgreSQL 17) as primary database with **localStorage fallback** for offline/demo mode.
 
 ## Commands
 
 ### Development
 
 ```bash
-npm run dev       # Start Vite dev server on http://localhost:3000 with hot reload
+npm run dev       # Start Vite dev server on http://localhost:4001 with hot reload
 npm run build     # Build for production → /dist directory
 npm run preview   # Test production build locally
+```
+
+### Supabase Local Development
+
+```bash
+npx supabase start   # Start local Supabase (PostgreSQL, Auth, Storage, Studio)
+npx supabase status  # Check running services and ports
+npx supabase stop    # Stop all Supabase services
+npx supabase db reset # Reset database (CAUTION: deletes all data)
+npx supabase migration new <name> # Create new migration
+npx supabase db push # Apply migrations to local database
 ```
 
 ### Running the App
 
 1. Install dependencies: `npm install`
-2. Set `GEMINI_API_KEY` in `.env.local` (required for Gemini API calls)
-3. Run `npm run dev`
+2. Set environment variables in `.env.local`:
+   - `GEMINI_API_KEY` (required for Gemini API calls)
+   - `VITE_SUPABASE_URL` (for Supabase integration)
+   - `VITE_SUPABASE_ANON_KEY` (for Supabase auth)
+3. Start Supabase local: `npx supabase start`
+4. Run dev server: `npm run dev`
+5. Access app at `http://localhost:4001`
+6. Access Supabase Studio at `http://127.0.0.1:54423`
 
 The app is primarily designed for Google Gemini but supports Groq as a fallback LLM provider. API key configuration happens in the Settings view (Settings.tsx).
 
 ### Environment Setup
 
-- **Required**: `GEMINI_API_KEY` in `.env.local` for Gemini API access
-- **Optional**: Groq API key can be added in the Settings view for alternative LLM provider
+**Required Variables in `.env.local`:**
+
+```bash
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Supabase Local (Development)
+VITE_SUPABASE_URL=http://127.0.0.1:54421
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+```
+
+**Optional:**
+- Groq API key can be added in the Settings view for alternative LLM provider
+
+### Local Services (Supabase)
+
+When running `npx supabase start`, the following services are available:
+
+| Service | Port | URL |
+|---------|------|-----|
+| **Vite Dev Server** | 4001 | http://localhost:4001 |
+| **Supabase API** | 54421 | http://127.0.0.1:54421 |
+| **Supabase DB** | 54400 | postgresql://127.0.0.1:54400 |
+| **Supabase Studio** | 54423 | http://127.0.0.1:54423 |
+| **Inbucket (Email)** | 54424 | http://127.0.0.1:54424 |
 
 ## Architecture
+
+### Supabase Integration (Nov 2025)
+
+**Database Architecture - Hybrid Mode:**
+
+The application uses a **hybrid approach** for data persistence:
+- **Primary:** Supabase (PostgreSQL 17) with Row Level Security
+- **Fallback:** localStorage for offline/demo mode
+- **Auto-detection:** `databaseService.ts` automatically uses Supabase when available
+
+**Database Schema (3 Tables):**
+
+#### 1. **profiles** (User Profiles)
+```sql
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+  updated_at TIMESTAMPTZ,
+  name TEXT,
+  email TEXT,
+  avatar_url TEXT,
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin'))
+);
+```
+
+**Row Level Security (RLS):**
+- ✅ Public profiles viewable by everyone
+- ✅ Users can insert/update own profile
+- ✅ Admins can view all profiles (via `is_admin()` function)
+
+#### 2. **prds** (Product Requirement Documents)
+```sql
+CREATE TABLE prds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  content JSONB NOT NULL,  -- Full PRD object (competitors, ui, db, logo, etc.)
+  status TEXT DEFAULT 'draft',
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+```
+
+**Row Level Security (RLS):**
+- ✅ Users view/edit/delete only own PRDs
+- ✅ Admins view all PRDs (read-only)
+
+#### 3. **prompts** (Development Prompts)
+```sql
+CREATE TABLE prompts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  prd_id UUID REFERENCES prds(id) ON DELETE SET NULL,
+  prd_title TEXT,
+  content TEXT NOT NULL,
+  meta JSONB,  -- { type, platform, stack, framework, specialRequirements }
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+```
+
+**Row Level Security (RLS):**
+- ✅ Users view/insert/delete only own prompts
+- ✅ Admins view all prompts (read-only)
+
+**Database Triggers:**
+
+```sql
+-- Auto-create profile when user registers
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Helper function to check if user is admin
+CREATE FUNCTION public.is_admin() RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+```
+
+**Migrations:**
+
+Located in `supabase/migrations/`:
+- `20251122113726_init_schema.sql` - Initial schema (tables + RLS + triggers)
+- `20251122115203_backfill_profiles.sql` - Backfill existing users
+
+**Supabase Studio Access:**
+
+Access the web UI at `http://127.0.0.1:54423` to:
+- Browse tables and data
+- Run SQL queries
+- Manage auth users
+- View RLS policies
+- Monitor real-time activity
 
 ### Component Structure
 
@@ -123,8 +256,9 @@ import { Alert } from '../components/Alert';
 - **MyDocuments.tsx** - List and manage saved documents
 - **DocumentViewer.tsx** - View/edit generated PRDs and prompts
 - **Settings.tsx** - Configure AI model (Gemini/Groq) and API keys
-- **Auth.tsx** - Login/register with localStorage persistence
+- **Auth.tsx** - Login/register with Supabase Auth
 - **IdeaCatalog.tsx** - Browse sample ideas
+- **AdminDashboard.tsx** - 🆕 Admin panel with 5 tabs (Overview, Users, Activity, System, Security) - **REFACTORED Nov 2025**
 
 ### Services Layer
 
@@ -139,13 +273,41 @@ import { Alert } from '../components/Alert';
 - `generateJSON<T>(prompt, schema)` - Structured generation with schema validation
 - Supports multiple models: Llama, Mixtral, DeepSeek, Gemma
 
-**databaseService.ts** - localStorage CRUD operations
-- User auth: `registerUser()`, `loginUser()`, `logoutUser()`
-- PRD management: `createPrd()`, `getPrds()`, `updatePrd()`, `deletePrd()`
-- Prompt management: `createPrompt()`, `getPrompts()`, `updatePrompt()`, `deletePrompt()`
-- Chat sessions: `getChatSessions()`, `saveChatSession()`
-- Settings: `saveSettings()`, `getSettings()`
-- Agent preferences: `toggleFavoriteAgent()`, `getAgentPreferences()`
+**databaseService.ts** - Supabase + localStorage hybrid abstraction (796 lines)
+- **User auth:** `registerUser()`, `loginUser()`, `logoutUser()`, `getCurrentUser()`
+- **PRD management:** `createPrd()`, `getPrds()`, `getPrdById()`, `deletePrd()`
+- **Prompt management:** `createPrompt()`, `getPrompts()`, `deletePrompt()`
+- **Chat sessions:** `getChatSessions()`, `saveChatSession()`
+- **Settings:** `saveSettings()`, `getSettings()`
+- **Agent preferences:** `toggleFavoriteAgent()`, `getAgentPrefs()`
+- **🆕 Admin operations:**
+  - `getAllUsers()` - Get all users (admin only)
+  - `updateUserRole(userId, role)` - Promote/demote users
+  - `getSystemStats()` - Get system metrics (users, prds, prompts, storage)
+  - `clearDatabase()` - Clear all data (CAUTION)
+  - `deleteUser(userId)` - Delete user and their data
+  - `resetUserPassword(userId)` - Reset user password
+- **🆕 Activity Logs:**
+  - `getActivityLogs()` - Get audit logs
+  - `logActivity(params)` - Log admin actions (auto-called)
+- **🆕 Export/Import:**
+  - `exportAllData()` - Export full database backup (JSON)
+
+**Hybrid Mode Logic:**
+```typescript
+private hasSupabase = !!supabase && !!import.meta.env.VITE_SUPABASE_URL;
+
+// Automatically uses Supabase if available, otherwise localStorage
+async getPrds(userId: string): Promise<PRD[]> {
+  if (this.hasSupabase) {
+    // Use Supabase with RLS
+    const { data } = await supabase.from('prds').select('*')...
+  } else {
+    // Fallback to localStorage
+    return this.getListFromStorage<PRD>('prds')...
+  }
+}
+```
 
 **routerService.ts** - URL-based navigation system (Nov 2025)
 - Singleton service managing browser History API
@@ -234,14 +396,26 @@ The app includes 5+ pre-configured AI personas stored in `constants.ts`:
 
 ### Data Persistence Strategy
 
-All data persists to browser localStorage via databaseService:
-- User accounts (email, password hashed)
-- Generated PRDs and prompts
-- Chat session histories
-- AI model preferences
-- Agent favorites
+**Hybrid Mode (Supabase + localStorage):**
 
-This approach enables AI Studio deployment without a backend server. Data is scoped per user based on login.
+The application uses a smart hybrid approach via `databaseService.ts`:
+- **Primary:** Supabase (PostgreSQL 17) with Row Level Security
+- **Fallback:** localStorage for offline/demo mode
+- **Auto-detection:** Checks `VITE_SUPABASE_URL` environment variable
+
+**Data Stored:**
+- User accounts (via Supabase Auth - bcrypt hashed passwords)
+- Generated PRDs and prompts (JSONB content in PostgreSQL)
+- Chat session histories (localStorage for performance)
+- AI model preferences (per-user settings)
+- Agent favorites (localStorage)
+- Activity logs (last 500 entries in localStorage)
+
+**Benefits:**
+- ✅ Production-ready with Supabase Cloud
+- ✅ Works offline with localStorage fallback
+- ✅ Row Level Security protects user data
+- ✅ No migration needed - same API surface
 
 ### LLM Provider Switching
 
@@ -254,10 +428,20 @@ Users can switch between Gemini and Groq in Settings:
 
 ## Large Files to Be Aware Of
 
-- **views/GeneratePrd.tsx** (~393 lines) - **REFACTORED Nov 2025** - Main orchestrator for 6-step PRD wizard, now 67% smaller
-- **views/DocumentViewer.tsx** (~224 lines) - **REFACTORED Nov 2025** - Document viewer with 5 tabs, now 56.8% smaller
-- **geminiService.ts** (~28KB) - AI integration with fallback logic and JSON schema handling
-- **AgentHub.tsx** (~362 lines) - Agent discovery, chat management, and favorites system (candidate for refactoring)
+**Refactored Views (Modular Architecture):**
+- **views/GeneratePrd.tsx** (~393 lines) - **REFACTORED Nov 2025** - Main orchestrator for 6-step PRD wizard, 67% reduction
+- **views/DocumentViewer.tsx** (~224 lines) - **REFACTORED Nov 2025** - Document viewer with 5 tabs, 56.8% reduction
+- **views/AdminDashboard.tsx** (~120 lines) - **REFACTORED Nov 2025** - Admin panel with 5 tabs, 51% reduction
+
+**Services & Large Components:**
+- **services/databaseService.ts** (~796 lines) - Hybrid Supabase + localStorage abstraction with 19 methods
+- **services/geminiService.ts** (~28KB) - AI integration with fallback logic and JSON schema handling
+- **views/AgentHub.tsx** (~362 lines) - Agent discovery, chat management, and favorites system (candidate for refactoring)
+
+**Modular Component Counts:**
+- **GeneratePrd:** 13 files (steps, modals, hooks)
+- **DocumentViewer:** 12 files (tabs, hooks)
+- **AdminDashboard:** 15 files (tabs, hooks, components)
 
 ### GeneratePrd Component Architecture (Modular - Nov 2025)
 
@@ -336,6 +520,90 @@ components/DocumentViewer/
 - Total modular files: 12 files (449 lines total)
 - Reusability: Hooks can be used in other document viewers
 
+### AdminDashboard Component Architecture (Modular - Nov 2025)
+
+The AdminDashboard view has been refactored into a modular architecture following the same pattern:
+
+```
+views/AdminDashboard.tsx (120 lines) - Main orchestrator
+
+components/AdminDashboard/
+├── tabs/                           (5 tab components)
+│   ├── OverviewTab.tsx            (Metrics + system status - 6 stat cards)
+│   ├── UsersTab.tsx               (User management - search, filters, role changes)
+│   ├── ActivityTab.tsx            (Audit logs - severity filtering, pagination)
+│   ├── SystemTab.tsx              (DB cleanup, export, cache clear, tech info)
+│   ├── SecurityTab.tsx            (Security events, IP tracking, recommendations)
+│   └── types.ts, index.ts
+├── hooks/                          (3 custom hooks)
+│   ├── useAdminData.ts            (260 lines - data loading & refresh)
+│   ├── useUserManagement.ts       (173 lines - user operations)
+│   ├── useSystemOps.ts            (87 lines - system maintenance)
+│   └── index.ts
+└── components/                     (2 reusable components)
+    ├── StatCard.tsx               (Metric cards with trends)
+    ├── ActivityLogItem.tsx        (Log item with severity badges)
+    └── index.ts
+```
+
+**Key Features by Tab:**
+
+1. **Overview Tab:**
+   - 6 metric cards (Users, Active Users, PRDs, Prompts, Documents, Storage)
+   - Activity panels (averages per user)
+   - System status (DB, Storage, API status)
+
+2. **Users Tab:**
+   - Search by name/email
+   - Filter by role (Admin/User)
+   - Sort by name/email/role
+   - Promote/Demote with modal confirmation
+   - Real-time user count
+
+3. **Activity Tab:**
+   - Filter by severity (Info, Warning, Error)
+   - Pagination (25, 50, 100, 500 records)
+   - Relative timestamps ("5min ago")
+   - Stats cards per severity type
+   - Auto-logged admin actions
+
+4. **System Tab:**
+   - Clear Database (requires typing "CONFIRMAR")
+   - Export data (JSON/CSV with auto-download)
+   - Clear cache (sessionStorage only)
+   - Technical info (version, user agent, screen resolution)
+
+5. **Security Tab:**
+   - Security metrics (Status, Active Sessions, Failed Logins)
+   - Event log (login, logout, role changes, data access)
+   - IP and User Agent tracking
+   - Security recommendations (2FA, backups, reviews)
+
+**Key Architectural Decisions:**
+- **5 Tabs:** Each admin function is isolated (Overview, Users, Activity, System, Security)
+- **3 Custom Hooks:** Data loading, user operations, system operations
+- **Modal Confirmations:** Uses `Modal` component (not native `confirm()`)
+- **Activity Logging:** All admin actions automatically logged via `db.logActivity()`
+- **Type Safety:** All tabs have strict interfaces in `tabs/types.ts`
+- **Design System:** 100% compliance (Button, Badge, Alert, Modal, Input)
+
+**When Working with AdminDashboard:**
+1. **Adding new tab**: Create component in `tabs/`, add to navigation array
+2. **Adding admin operation**: Add method to appropriate hook (`useUserManagement`, `useSystemOps`)
+3. **Adding metric**: Use `StatCard` component in OverviewTab
+4. **Adding audit log**: Call `db.logActivity()` after action completes
+
+**Performance:**
+- Build time: ~2.90s (no regression)
+- Code reduction: 244 → 120 lines in main file (-51%)
+- Total modular files: 15 files
+- Activity Logs: Keeps last 500 records in localStorage
+
+**New databaseService Methods (for Admin):**
+- `getAllUsers()`, `updateUserRole()`, `getSystemStats()`
+- `getActivityLogs()`, `logActivity()`, `exportAllData()`
+- `deleteUser()`, `resetUserPassword()`, `clearDatabase()`
+
 ## Type Safety
 
 All components, services, and data structures are fully typed with TypeScript:
@@ -356,10 +624,12 @@ The app uses **React 19.2.0** with React 19 APIs:
 ## Build & Deployment
 
 - **Build output**: Vite produces optimized bundle in `/dist` directory
-- **Target**: Google AI Studio platform (can also run standalone)
-- **Dev server**: Vite with HMR enabled on port 3000
-- **CSS**: Tailwind CSS via CDN in index.html
-- **Icons**: Custom SVG component library (components/icons/Icons.tsx)
+- **Build time**: ~2.90s (849KB bundle, gzipped: 213KB)
+- **Target**: Production deployment with Supabase Cloud
+- **Dev server**: Vite with HMR enabled on port 4001
+- **CSS**: Tailwind CSS via CDN in index.html (semantic tokens)
+- **Icons**: Custom SVG component library (components/icons/Icons.tsx - 50+ icons)
+- **Database**: Supabase PostgreSQL 17 (local dev + cloud production)
 
 ## Development Notes
 
@@ -418,12 +688,19 @@ The ChatDrawer component can be used by any feature:
 3. Chat bubbles render with markdown support (MarkdownRenderer.tsx)
 4. Chat state is managed within ChatDrawer component
 
-### localStorage Limitations
+### Data Storage Notes
 
-- 5-10MB typical limit per domain
-- All data is client-side only (lost on browser clear)
-- Good for demo/prototyping, not production user data
-- Consider backend migration if scaling beyond single user
+**Supabase (Primary):**
+- ✅ Unlimited storage (cloud-based PostgreSQL)
+- ✅ Row Level Security protects user data
+- ✅ Automatic backups and scaling
+- ✅ Production-ready authentication
+
+**localStorage (Fallback):**
+- ⚠️ 5-10MB typical limit per domain
+- ⚠️ Client-side only (lost on browser clear)
+- ✅ Good for offline mode and demo
+- ✅ Automatic fallback when Supabase unavailable
 
 ## Documentation Maintenance
 

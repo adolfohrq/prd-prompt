@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { XIcon } from './icons/Icons';
+import { IconButton } from './IconButton';
 
 interface TagInputProps {
   label: string;
@@ -38,9 +39,14 @@ export const TagInput: React.FC<TagInputProps> = ({ label, tags, onTagsChange, p
         {tags.map(tag => (
           <div key={tag} className="flex items-center bg-primary/10 text-primary text-sm font-medium mr-2 mb-1 px-2 py-1 rounded">
             {tag}
-            <button onClick={() => removeTag(tag)} className="ml-2 text-primary hover:text-primary/70">
-              <XIcon className="w-3 h-3" />
-            </button>
+            <IconButton
+              variant="ghost"
+              size="sm"
+              onClick={() => removeTag(tag)}
+              className="ml-1 h-4 w-4 p-0 hover:bg-primary/20 text-primary"
+              ariaLabel={`Remover ${tag}`}
+              icon={<XIcon className="w-3 h-3" />}
+            />
           </div>
         ))}
         <input

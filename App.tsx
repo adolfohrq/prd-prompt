@@ -10,6 +10,7 @@ import { DocumentViewer } from './views/DocumentViewer';
 import { Settings } from './views/Settings';
 import { AgentHub } from './views/AgentHub';
 import { Auth } from './views/Auth';
+import { AdminDashboard } from './views/AdminDashboard';
 import { Toast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppContext } from './contexts/AppContext';
@@ -247,6 +248,13 @@ const App: React.FC = () => {
             : <MyDocuments prds={prds} prompts={prompts} onDeletePrd={deletePrd} onDeletePrompt={deletePrompt} onViewDocument={viewDocument} onEditPrd={handleEditPrd} />;
       case 'settings':
         return <Settings />;
+      case 'admin':
+        console.log("Rota Admin acessada. User:", user);
+        if (user?.role !== 'admin') {
+            console.warn("Acesso negado a /admin. Role atual:", user?.role);
+            return <Dashboard setActiveView={navigate} prdCount={prds.length} promptCount={prompts.length} />;
+        }
+        return <AdminDashboard setActiveView={navigate} userId={user.id} />;
       default:
         return <Dashboard setActiveView={navigate} prdCount={prds.length} promptCount={prompts.length} />;
     }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '../../Button';
+import { IconButton } from '../../IconButton';
 import { GlobeIcon, CheckCircleIcon, InfoIcon, WandIcon } from '../../icons/Icons';
 import type { CompetitorsStepProps } from './types';
 
@@ -63,12 +64,14 @@ export const CompetitorsStep: React.FC<CompetitorsStepProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-pre-wrap text-sm text-gray-500">{c.notes}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <button
-                    className="text-gray-400 hover:text-primary p-2 rounded-full hover:bg-white transition-all"
-                    title="Ver detalhes completos"
-                  >
-                    <InfoIcon className="w-5 h-5" />
-                  </button>
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-primary hover:bg-white"
+                    onClick={() => onCompetitorClick(c, i)}
+                    ariaLabel="Ver detalhes completos"
+                    icon={<InfoIcon className="w-5 h-5" />}
+                  />
                 </td>
               </tr>
             ))}

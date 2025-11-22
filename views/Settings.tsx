@@ -10,6 +10,7 @@ import { geminiService } from '../services/geminiService';
 import { db } from '../services/databaseService';
 import { AppContext } from '../contexts/AppContext';
 import { TrashIcon } from '../components/icons/Icons';
+import { designSystem } from '../designSystem';
 
 export const Settings: React.FC = () => {
     const appContext = useContext(AppContext);
@@ -122,7 +123,7 @@ export const Settings: React.FC = () => {
     }
 
     return (
-        <div className="max-w-3xl mx-auto pb-10">
+        <div className="mx-auto pb-10" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.readable }}>
             <h1 className="text-3xl font-bold text-secondary-900 mb-2">Configurações</h1>
             <p className="text-lg text-secondary-600 mb-8">Gerencie modelos de IA e dados do sistema.</p>
 

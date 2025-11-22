@@ -9,7 +9,7 @@ import type { View } from '../types';
 
 // Mapeamento bidirecional: View <-> Slug
 export const ROUTES = {
-  'dashboard': '/',
+  'dashboard': '/dashboard',
   'generate-prd': '/criar-prd',
   'generate-prompt': '/criar-prompt',
   'my-documents': '/meus-documentos',
@@ -17,11 +17,13 @@ export const ROUTES = {
   'ai-agents': '/agentes-ia',
   'document-viewer': '/documento',
   'settings': '/configuracoes',
+  'admin': '/admin',
 } as const;
 
 // Reverse mapping: Slug -> View
 const SLUG_TO_VIEW: Record<string, View> = {
   '/': 'dashboard',
+  '/dashboard': 'dashboard',
   '/criar-prd': 'generate-prd',
   '/criar-prompt': 'generate-prompt',
   '/meus-documentos': 'my-documents',
@@ -29,6 +31,7 @@ const SLUG_TO_VIEW: Record<string, View> = {
   '/agentes-ia': 'ai-agents',
   '/documento': 'document-viewer',
   '/configuracoes': 'settings',
+  '/admin': 'admin',
 };
 
 export type RouteParams = {

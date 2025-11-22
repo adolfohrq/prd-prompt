@@ -1,5 +1,5 @@
 
-export type View = 'dashboard' | 'generate-prd' | 'generate-prompt' | 'my-documents' | 'idea-catalog' | 'document-viewer' | 'settings' | 'ai-agents';
+export type View = 'dashboard' | 'generate-prd' | 'generate-prompt' | 'my-documents' | 'idea-catalog' | 'document-viewer' | 'settings' | 'ai-agents' | 'admin';
 
 export interface User {
   id: string;
@@ -7,6 +7,7 @@ export interface User {
   email: string;
   password?: string; // In a real app, never store plain text. Here it's a simulation.
   avatar?: string;
+  role?: 'user' | 'admin';
 }
 
 export interface AppSettings {
@@ -178,4 +179,28 @@ export interface UserAgentPrefs {
   userId: string;
   favorites: string[]; // Agent IDs
   recents: string[];   // Agent IDs
+}
+
+// --- Admin Types (New) ---
+
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  target?: string;
+  timestamp: Date;
+  details?: string;
+  severity: 'info' | 'warning' | 'error';
+}
+
+export interface SecurityEvent {
+  id: string;
+  type: 'login' | 'logout' | 'failed_login' | 'role_change' | 'data_access';
+  userId?: string;
+  userName?: string;
+  timestamp: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  details: string;
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DatabaseTabProps } from './types';
+import { Button } from '../../Button';
 
 export const DatabaseTab: React.FC<DatabaseTabProps> = ({ dbSchema, dbSql, dbPrisma, onCopy }) => {
   return (
@@ -56,7 +57,14 @@ export const DatabaseTab: React.FC<DatabaseTabProps> = ({ dbSchema, dbSql, dbPri
               <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
                 <div className="bg-gray-800 px-4 py-2 flex justify-between items-center border-b border-gray-700">
                   <span className="text-xs font-bold text-gray-400">SQL Schema</span>
-                  <button onClick={() => onCopy(dbSql)} className="text-xs text-white hover:text-primary transition-colors">Copiar</button>
+                  <Button 
+                    onClick={() => onCopy(dbSql)} 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-white hover:text-primary hover:bg-white/10 h-auto py-1 px-2 text-xs"
+                  >
+                    Copiar
+                  </Button>
                 </div>
                 <pre className="p-4 text-xs text-green-400 font-mono overflow-x-auto max-h-60 scrollbar-thin scrollbar-thumb-gray-700">
                   {dbSql}

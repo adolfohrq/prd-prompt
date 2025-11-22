@@ -1,9 +1,8 @@
-
 import React, { useContext } from 'react';
-import type { View } from '../../types';
-import { DashboardIcon, GeneratePrdIcon, GeneratePromptIcon, IdeaCatalogIcon, MyDocumentsIcon, LogoIcon, SettingsIcon, UserGroupIcon } from './icons/Icons';
+import type { View } from '../types';
+import { DashboardIcon, GeneratePrdIcon, GeneratePromptIcon, IdeaCatalogIcon, MyDocumentsIcon, LogoIcon, SettingsIcon, UserGroupIcon, ShieldIcon } from './icons/Icons';
 import { AppContext } from '../contexts/AppContext';
-import { Button } from './Button';
+import { Badge } from './Badge';
 
 interface SidebarProps {
   activeView: View;
@@ -18,18 +17,17 @@ const NavItem: React.FC<{
   isActive: boolean;
   onClick: () => void;
 }> = ({ icon, label, isActive, onClick }) => (
-  <Button
-    variant="ghost"
+  <button
     onClick={onClick}
-    className={`w-full justify-start px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
       isActive
-        ? 'bg-primary/10 text-primary hover:bg-primary/15'
+        ? 'bg-primary/10 text-primary'
         : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900'
     }`}
   >
     <span className="mr-3">{icon}</span>
     {label}
-  </Button>
+  </button>
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, ideaCount, currentModel = 'gemini-2.5-flash' }) => {
@@ -77,6 +75,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, ide
         </div>
 
         <div className="pt-2 mt-2 border-t border-gray-200">
+             {appContext?.user?.role === 'admin' && (
+                <NavItem
+                    icon={<ShieldIcon className="h-5 w-5" />}
+                    label="Administração"
+                    isActive={activeView === 'admin'}
+                    onClick={() => setActiveView('admin')}
+                />
+             )}
              <NavItem
                 icon={<SettingsIcon className="h-5 w-5" />}
                 label="Configurações"
@@ -119,7 +125,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, ide
                         {appContext?.user?.name.charAt(0) || 'U'}
                     </div>
                     <div className="flex flex-col truncate">
-                        <span className="text-xs font-bold text-gray-800 truncate">{appContext?.user?.name}</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-gray-800 truncate">{appContext?.user?.name}</span>
+                            {appContext?.user?.role && (
+                                <Badge
+                                    variant={appContext.user.role === 'admin' ? 'primary' : 'gray'}
+                                    size="sm"
+                                    rounded="full"
+                                >
+                                    {appContext.user.role === 'admin' ? 'Admin' : 'Usuário'}
+                                </Badge>
+                            )}
+                        </div>
                         <span className="text-[10px] text-gray-500 truncate">{appContext?.user?.email}</span>
                     </div>
                  </div>

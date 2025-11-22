@@ -9,6 +9,7 @@ import { Card } from '../components/Card';
 import { geminiService } from '../services/geminiService';
 import { AppContext } from '../contexts/AppContext';
 import { CopyIcon, CodeIcon, LayoutIcon, DatabaseIcon, GlobeIcon } from '../components/icons/Icons';
+import { designSystem } from '../designSystem';
 
 interface GeneratePromptProps {
   prds: PRD[];
@@ -118,7 +119,7 @@ export const GeneratePrompt: React.FC<GeneratePromptProps> = ({ prds, onSaveProm
   };
 
   return (
-    <div className="max-w-6xl mx-auto pb-12">
+    <div className="mx-auto pb-12" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.default }}>
       <div className="mb-8">
           <h1 className="text-3xl font-bold text-secondary-900">Engenharia de Prompt Avançada</h1>
           <p className="mt-1 text-secondary-600">Transforme PRDs em instruções de código otimizadas para sua IA favorita.</p>

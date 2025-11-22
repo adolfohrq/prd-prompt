@@ -5,6 +5,8 @@ import { ChatBubble } from './ChatBubble';
 import type { ChatMessage, AgentPersona, PRD } from '../../../types';
 import { DocumentSelectorModal } from '../DocumentSelectorModal';
 import { AppContext } from '../../contexts/AppContext';
+import { IconButton } from '../IconButton';
+import { Button } from '../Button';
 
 interface ChatDrawerProps {
   isOpen: boolean;
@@ -159,19 +161,20 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button 
+                    <IconButton
+                        variant="ghost"
                         onClick={() => setIsFullscreen(!isFullscreen)}
-                        className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all"
-                        title={isFullscreen ? "Restaurar" : "Tela Cheia"}
-                    >
-                        {isFullscreen ? <MinimizeIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
-                    </button>
-                    <button 
-                        onClick={onClose} 
-                        className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all"
-                    >
-                        <XIcon className="w-5 h-5" />
-                    </button>
+                        ariaLabel={isFullscreen ? "Restaurar" : "Tela Cheia"}
+                        className="text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                        icon={isFullscreen ? <MinimizeIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
+                    />
+                    <IconButton
+                        variant="ghost"
+                        onClick={onClose}
+                        ariaLabel="Fechar"
+                        className="text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                        icon={<XIcon className="w-5 h-5" />}
+                    />
                 </div>
             </div>
 
@@ -190,13 +193,15 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                         {suggestions.length > 0 && (
                             <div className="flex flex-wrap justify-center gap-2 w-full max-w-md">
                                 {suggestions.map((sug, i) => (
-                                    <button 
+                                    <Button
                                         key={i}
+                                        variant="secondary"
+                                        size="sm"
                                         onClick={() => onSendMessage(sug)}
-                                        className="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-full hover:border-gray-400 hover:text-gray-900 transition-all"
+                                        className="rounded-full bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900"
                                     >
                                         {sug}
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         )}
@@ -231,15 +236,29 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                     {attachedDoc && (
                          <div className="flex items-center gap-2 bg-white border border-purple-200 text-purple-700 px-3 py-1 rounded-lg text-xs shadow-sm">
                             <span className="font-bold">DOC:</span> {attachedDoc.title}
-                            <button onClick={() => setAttachedDoc(null)} className="hover:text-purple-900"><XIcon className="w-3 h-3"/></button>
+                            <IconButton
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setAttachedDoc(null)}
+                                ariaLabel="Remover anexo"
+                                className="h-4 w-4 p-0 hover:text-purple-900 text-purple-700"
+                                icon={<XIcon className="w-3 h-3"/>}
+                            />
                          </div>
                     )}
                     {pastedImage && (
                         <div className="relative group h-12 w-12 rounded-lg border border-gray-200 overflow-hidden bg-white">
                             <img src={pastedImage} alt="Paste" className="h-full w-full object-cover" />
-                            <button onClick={() => setPastedImage(null)} className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white">
-                                <XIcon className="w-4 h-4" />
-                            </button>
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                                <IconButton
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setPastedImage(null)}
+                                    ariaLabel="Remover imagem"
+                                    className="text-white hover:text-white hover:bg-white/20"
+                                    icon={<XIcon className="w-4 h-4" />}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -248,14 +267,14 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
             {/* Input Area */}
             <div className="p-4 bg-white border-t border-gray-100 shrink-0">
                 <div className="relative flex items-center gap-2">
-                    <button 
+                    <IconButton
                         type="button"
                         onClick={() => setIsDocModalOpen(true)}
-                        className="p-3 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-primary transition-colors border border-transparent hover:border-gray-200"
-                        title="Anexar Documento"
-                    >
-                        <ClipIcon className="w-5 h-5" />
-                    </button>
+                        ariaLabel="Anexar Documento"
+                        variant="ghost"
+                        className="p-3 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-primary border border-transparent hover:border-gray-200 h-auto w-auto"
+                        icon={<ClipIcon className="w-5 h-5" />}
+                    />
 
                     <form onSubmit={handleSubmit} className="flex-1 relative">
                         <input
@@ -268,13 +287,17 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                             onPaste={handlePaste}
                             disabled={isLoading}
                         />
-                        <button 
-                            type="submit"
-                            disabled={(!inputValue.trim() && !pastedImage) || isLoading}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white bg-gray-900 hover:bg-black disabled:opacity-50 disabled:bg-gray-300 transition-colors shadow-sm"
-                        >
-                            <SendIcon className="w-4 h-4" />
-                        </button>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                            <IconButton
+                                type="submit"
+                                disabled={(!inputValue.trim() && !pastedImage) || isLoading}
+                                ariaLabel="Enviar"
+                                variant="primary"
+                                size="sm"
+                                className="bg-gray-900 hover:bg-black text-white shadow-sm"
+                                icon={<SendIcon className="w-4 h-4" />}
+                            />
+                        </div>
                     </form>
                 </div>
                 <div className="flex justify-between items-center mt-2 px-1">

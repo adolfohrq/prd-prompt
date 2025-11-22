@@ -12,6 +12,7 @@ import { Button } from '../components/Button';
 import { AppContext } from '../contexts/AppContext';
 import { geminiService } from '../services/geminiService';
 import { db } from '../services/databaseService';
+import { designSystem } from '../designSystem';
 
 export const AgentHub: React.FC = () => {
   const appContext = useContext(AppContext);
@@ -186,7 +187,7 @@ export const AgentHub: React.FC = () => {
   }, [activeAgent, userId, appContext]);
 
   return (
-    <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto pb-12 px-4 sm:px-6 lg:px-8" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.default }}>
         
         {/* Background Decoration */}
         <div className="fixed top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-50/50 to-transparent -z-10 pointer-events-none" />
@@ -221,47 +222,6 @@ export const AgentHub: React.FC = () => {
             </button>
         </div>
 
-        {/* QUICK ACCESS (Mini Cards) */}
-        {(prefs.favorites.length > 0 || prefs.recents.length > 0) && (
-            <div className="mb-10">
-                 <div className="flex items-center gap-2 mb-4 px-1">
-                    <StarIcon className="w-4 h-4 text-warning-500" filled />
-                    <h3 className="text-sm font-bold text-secondary-700 uppercase tracking-wider">Acesso Rápido</h3>
-                 </div>
-                 
-                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent -mx-4 px-4">
-                    {[...prefs.favorites, ...prefs.recents.filter(id => !prefs.favorites.includes(id))].map(id => {
-                        const agent = SPECIALIST_AGENTS.find(a => a.id === id);
-                        if (!agent) return null;
-                        const isFav = prefs.favorites.includes(id);
-                        
-                        return (
-                             <button 
-                                key={id} 
-                                onClick={() => handleStartChat(agent)} 
-                                className={`
-                                    flex-shrink-0 flex flex-col justify-between p-4 w-40 h-32 rounded-2xl border transition-all duration-200
-                                    ${isFav 
-                                        ? 'bg-white border-amber-200 shadow-sm hover:shadow-md hover:border-amber-300' 
-                                        : 'bg-white border-gray-100 shadow-sm hover:shadow-md hover:border-gray-300'}
-                                `}
-                             >
-                                <div className="flex justify-between items-start w-full">
-                                    <span className="text-2xl filter drop-shadow-sm">
-                                         {agent.category === 'Marketing' && '🚀'} {agent.category === 'Dev' && '💻'} {agent.category === 'Design' && '🎨'} {agent.category === 'Data' && '📊'} {agent.category === 'Product' && '💡'} {agent.category === 'Content' && '📝'}
-                                    </span>
-                                    {isFav && <StarIcon filled className="w-4 h-4 text-amber-400" />}
-                                </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-sm text-gray-800 leading-tight line-clamp-2">{agent.name}</p>
-                                    <p className="text-[10px] text-gray-400 mt-1">{agent.category}</p>
-                                </div>
-                             </button>
-                        )
-                    })}
-                 </div>
-            </div>
-        )}
 
         {/* STICKY FILTER BAR */}
         <div className="sticky top-0 z-30 pb-6 pt-2 -mx-4 px-4 sm:mx-0 sm:px-0">

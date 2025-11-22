@@ -10,6 +10,7 @@ import { MagicMatchModal, CreativeDirectionModal, TurboProgressModal } from '../
 import { DocumentStep, CompetitorsStep, UiPlanStep, DatabaseStep, LogoStep, ReviewStep } from '../components/GeneratePrd/steps';
 import { usePrdGeneration, useChatHandlers, useFormHandlers } from '../components/GeneratePrd/hooks';
 import type { TurboTask, TaskStatus } from '../components/GeneratePrd/types';
+import { designSystem } from '../designSystem';
 
 interface GeneratePrdProps {
   onSavePrd: (prd: PRD) => void;
@@ -289,7 +290,7 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd, editingPrd,
 
   // --- RENDER MAIN ---
   return (
-    <div className="max-w-5xl mx-auto pb-10 relative">
+    <div className="mx-auto pb-10 relative" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.form }}>
       <div className="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Gerador de PRD</h1>
@@ -320,17 +321,18 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd, editingPrd,
                             const isAccessible = index <= Math.max(currentStep, maxStepReached);
                             
                             return (
-                                <button
+                                <Button
                                     key={stepName}
+                                    variant="ghost"
                                     onClick={() => isAccessible && setCurrentStep(index)}
                                     disabled={!isAccessible}
                                     className={`
-                                        group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200
+                                        group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200 rounded-none h-auto
                                         ${isCurrent 
-                                            ? 'border-primary text-primary'
+                                            ? 'border-primary text-primary hover:bg-transparent'
                                             : isAccessible 
                                                 ? 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                                : 'border-transparent text-gray-300 cursor-not-allowed'
+                                                : 'border-transparent text-gray-300 cursor-not-allowed hover:bg-transparent'
                                         }
                                     `}
                                 >
@@ -346,7 +348,7 @@ export const GeneratePrd: React.FC<GeneratePrdProps> = ({ onSavePrd, editingPrd,
                                         {index + 1}
                                     </span>
                                     {stepName}
-                                </button>
+                                </Button>
                             );
                         })}
                     </nav>

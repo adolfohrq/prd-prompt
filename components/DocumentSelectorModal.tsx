@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { db } from '../services/databaseService';
 import type { PRD } from '../../types';
 import { FileTextIcon, SearchIcon } from './icons/Icons';
+import { Button } from './Button';
 
 interface DocumentSelectorModalProps {
   isOpen: boolean;
@@ -53,19 +54,20 @@ export const DocumentSelectorModal: React.FC<DocumentSelectorModalProps> = ({ is
                 ) : (
                     <div className="divide-y divide-gray-100">
                         {filtered.map(prd => (
-                            <button
+                            <Button
                                 key={prd.id}
+                                variant="ghost"
                                 onClick={() => { onSelect(prd); onClose(); }}
-                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left transition-colors"
+                                className="w-full justify-start gap-3 p-3 hover:bg-gray-50 h-auto rounded-none"
                             >
-                                <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+                                <div className="p-2 bg-purple-50 rounded-lg text-purple-600 shrink-0">
                                     <FileTextIcon className="w-5 h-5" />
                                 </div>
-                                <div>
+                                <div className="text-left">
                                     <p className="text-sm font-bold text-gray-800">{prd.title}</p>
-                                    <p className="text-xs text-gray-500">{prd.industry} • {new Date(prd.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-500 font-normal">{prd.industry} • {new Date(prd.createdAt).toLocaleDateString()}</p>
                                 </div>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 )}

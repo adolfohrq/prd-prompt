@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { SparklesIcon, SaveIcon, CheckCircleIcon } from '../icons/Icons';
 import type { ChatMessage } from '../../../types';
+import { Button } from '../Button';
+import { IconButton } from '../IconButton';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -56,13 +58,14 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onAction, isAct
             
             {/* Save Button (Only for AI) */}
             {!isUser && onSave && (
-                <button 
-                    onClick={handleSave} 
-                    className={`ml-2 p-1 rounded hover:bg-gray-100 transition-colors ${saved ? 'text-green-600' : 'text-gray-400 hover:text-gray-700'}`}
-                    title="Salvar como Nota"
-                >
-                    {saved ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <SaveIcon className="w-3.5 h-3.5" />}
-                </button>
+                <IconButton
+                    onClick={handleSave}
+                    variant="ghost"
+                    size="sm"
+                    className={`ml-2 p-1 h-auto w-auto rounded hover:bg-gray-100 transition-colors ${saved ? 'text-green-600' : 'text-gray-400 hover:text-gray-700'}`}
+                    ariaLabel="Salvar como Nota"
+                    icon={saved ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <SaveIcon className="w-3.5 h-3.5" />}
+                />
             )}
         </div>
 
@@ -79,13 +82,16 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onAction, isAct
                       <p className="text-xs font-bold text-gray-800">Alteração Sugerida</p>
                       <p className="text-[10px] text-gray-500 truncate">Atualizar o documento com base na conversa?</p>
                   </div>
-                  <button 
+                  <Button
                     onClick={onAction}
                     disabled={isActionLoading}
-                    className="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    variant="primary"
+                    size="sm"
+                    className="bg-gray-900 hover:bg-black text-white text-xs font-bold shadow-sm whitespace-nowrap"
+                    isLoading={isActionLoading}
                   >
-                      {isActionLoading ? 'Aplicando...' : 'Aplicar'}
-                  </button>
+                      Aplicar
+                  </Button>
               </div>
           </div>
       )}

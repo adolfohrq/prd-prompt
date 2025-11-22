@@ -1,5 +1,7 @@
 import React from 'react';
 import { ChatIcon } from '../icons/Icons';
+import { Button } from '../Button';
+import { IconButton } from '../IconButton';
 
 interface ChatButtonProps {
   onClick: () => void;
@@ -12,13 +14,13 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ onClick, label = "Falar 
   
   if (variant === 'icon') {
     return (
-      <button
+      <IconButton
         onClick={onClick}
-        title={label}
-        className={`flex items-center justify-center p-2 rounded-lg text-white transition-all hover:opacity-90 hover:scale-105 active:scale-95 shadow-sm ${color}`}
-      >
-        <ChatIcon className="w-5 h-5" />
-      </button>
+        ariaLabel={label}
+        className={`p-2 text-white hover:opacity-90 hover:scale-105 active:scale-95 shadow-sm ${color}`}
+        icon={<ChatIcon className="w-5 h-5" />}
+        variant="ghost" // Using ghost but styling with color prop to maintain flexibility
+      />
     );
   }
 

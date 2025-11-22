@@ -44,18 +44,19 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
         <div className="border-b border-gray-200 bg-gray-50">
           <nav className="flex overflow-x-auto" aria-label="Tabs">
             {reviewTabs.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
+                variant="ghost"
                 onClick={() => setActiveReviewTab(tab.id)}
                 className={`
-                  whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors
+                  whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors rounded-none h-auto
                   ${activeReviewTab === tab.id
-                    ? 'border-primary text-primary bg-white'
+                    ? 'border-primary text-primary bg-white hover:bg-white'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100'}
                 `}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </nav>
         </div>

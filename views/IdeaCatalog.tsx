@@ -2,6 +2,7 @@
 import React from 'react';
 import type { Idea } from '../types';
 import { Card } from '../components/Card';
+import { designSystem } from '../designSystem';
 
 interface IdeaCatalogProps {
   ideas: Idea[];
@@ -9,7 +10,7 @@ interface IdeaCatalogProps {
 
 export const IdeaCatalog: React.FC<IdeaCatalogProps> = ({ ideas }) => {
   return (
-    <div>
+    <div className="mx-auto" style={{ maxWidth: designSystem.componentVariants.layout.maxWidth.default }}>
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Catálogo de Ideias</h1>
       <p className="text-lg text-gray-600 mb-6">Precisa de inspiração? Explore algumas ideias de produtos para começar.</p>
       
