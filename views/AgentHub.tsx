@@ -1,5 +1,5 @@
 
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { SPECIALIST_AGENTS } from '../constants';
 import type { SpecialistAgent, ChatMessage, ChatSession, UserAgentPrefs, PromptDocument } from '../types';
 import { AgentCard } from '../components/AgentCard';
@@ -45,46 +45,49 @@ export const AgentHub: React.FC = () => {
 
   const categories = ['Todos', ...new Set(SPECIALIST_AGENTS.map(a => a.category))];
 
-  const filteredAgents = SPECIALIST_AGENTS.filter(agent => {
-      const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredAgents = useMemo(() =>
+    SPECIALIST_AGENTS.filter(agent => {
+      const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             agent.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             agent.shortDescription.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'Todos' || agent.category === selectedCategory;
       return matchesSearch && matchesCategory;
-  });
+    }),
+    [searchTerm, selectedCategory]
+  );
 
   // Favorites Logic
-  const toggleFavorite = async (agentId: string) => {
+  const toggleFavorite = useCallback(async (agentId: string) => {
       await db.toggleFavoriteAgent(userId, agentId);
       const newPrefs = await db.getAgentPrefs(userId);
       setPrefs(newPrefs);
       appContext?.showToast(newPrefs.favorites.includes(agentId) ? 'Favorito adicionado!' : 'Favorito removido.');
-  };
+  }, [userId, appContext]);
 
-  const handleOpenDetails = (agent: SpecialistAgent) => {
+  const handleOpenDetails = useCallback((agent: SpecialistAgent) => {
       setDetailsAgent(agent);
       setIsDetailsOpen(true);
-  };
+  }, []);
 
-  const handleStartChat = async (agent: SpecialistAgent) => {
+  const handleStartChat = useCallback(async (agent: SpecialistAgent) => {
       setActiveAgent(agent);
       setIsDetailsOpen(false);
       setIsMagicOpen(false);
-      
+
       const agentSessions = await db.getChatSessions(userId, agent.id);
       if (agentSessions.length > 0) {
           setCurrentMessages(agentSessions[0].messages);
       } else {
           setCurrentMessages([]);
       }
-      
-      setIsChatOpen(true);
-  };
 
-  const handleMagicMatch = async (text: string) => {
+      setIsChatOpen(true);
+  }, [userId]);
+
+  const handleMagicMatch = useCallback(async (text: string) => {
       setIsMagicLoading(true);
       const agentList = SPECIALIST_AGENTS.map(a => ({ id: a.id, desc: `${a.name} - ${a.role} - ${a.shortDescription}` }));
-      
+
       const recommendedId = await geminiService.classifyAgent(text, agentList);
       setIsMagicLoading(false);
 
@@ -99,9 +102,9 @@ export const AgentHub: React.FC = () => {
       } else {
           appContext?.showToast('Não consegui identificar um especialista para isso. Tente reformular.', 'error');
       }
-  };
+  }, [handleStartChat, appContext]);
 
-  const handleSendMessage = async (text: string, attachedDocContext?: string, imageBase64?: string) => {
+  const handleSendMessage = useCallback(async (text: string, attachedDocContext?: string, imageBase64?: string) => {
       if (!activeAgent) return;
 
       const newMessage: ChatMessage = {
@@ -153,16 +156,16 @@ export const AgentHub: React.FC = () => {
       } finally {
           setIsChatLoading(false);
       }
-  };
+  }, [activeAgent, currentMessages, sessions, userId, appContext]);
 
-  const handleSaveMessage = async (content: string) => {
+  const handleSaveMessage = useCallback(async (content: string) => {
       if (!activeAgent || !userId) return;
-      
+
       try {
           const snippet: PromptDocument = {
-              id: '', 
+              id: '',
               userId,
-              prdId: 'agent-chat', 
+              prdId: 'agent-chat',
               prdTitle: `Chat com ${activeAgent.name}`,
               type: 'Script/Tool',
               targetPlatform: 'Generic',
@@ -172,13 +175,13 @@ export const AgentHub: React.FC = () => {
               content: content,
               createdAt: new Date()
           };
-          
+
           await db.createPrompt(snippet);
           appContext?.showToast('Mensagem salva em "Meus Documentos"!');
       } catch (e) {
           appContext?.showToast('Erro ao salvar mensagem.', 'error');
       }
-  };
+  }, [activeAgent, userId, appContext]);
 
   return (
     <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">

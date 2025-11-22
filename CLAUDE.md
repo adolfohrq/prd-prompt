@@ -2,6 +2,23 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL: Development Rules
+
+**BEFORE making any code changes, you MUST:**
+1. Read and understand `regra.md` - This file contains ALL mandatory development rules, patterns, and architectural decisions
+2. Follow ALL guidelines in `regra.md` strictly - These are not suggestions, they are requirements
+3. When making architectural changes or adding significant features, UPDATE both `CLAUDE.md` and `regra.md` to reflect the changes
+4. The `regra.md` file is the source of truth for development standards in Portuguese (PT-BR)
+5. This `CLAUDE.md` file is the English reference for AI assistants
+
+**Key rules from regra.md:**
+- Views MUST only import `geminiService.ts` (never `groqService.ts` directly - Facade pattern)
+- NEVER access `localStorage` directly - always use `databaseService.ts`
+- Use `Promise.allSettled` for parallel AI generation (not `Promise.all`)
+- Always use `MarkdownRenderer` component for LLM text output
+- All UI text must be in Portuguese (PT-BR)
+- Register all changes in `updates/updates.md`
+
 ## Project Overview
 
 **PRD-Prompt.ai** is a React 19 + TypeScript SaaS web application that uses AI (Google Gemini and Groq) to help product managers and developers generate comprehensive Product Requirement Documents, development prompts, database schemas, and UI/UX flows. The application is designed to run in Google AI Studio and uses browser localStorage for data persistence (no backend required).
@@ -89,11 +106,30 @@ State flows down via context provider in App.tsx. Components use `useContext(App
 
 ### Key Design Patterns
 
-1. **Prop drilling** for view-level component communication
-2. **React Context API** for global state (avoiding prop drilling)
-3. **TypeScript generics** in services for type-safe API responses
-4. **localStorage abstraction** via databaseService to simulate backend persistence
-5. **Fallback logic** in geminiService for graceful degradation between LLM providers
+1. **Component Extraction** for modularity (GeneratePrd refactored Nov 2025)
+   - Extract modals, steps, and hooks from monolithic components
+   - Each component has a single responsibility
+   - Barrel exports (`index.ts`) for clean imports
+
+2. **Custom Hooks for Business Logic**
+   - Extract handlers and complex logic into hooks
+   - Keep view components focused on rendering
+   - Example: `usePrdGeneration`, `useChatHandlers`, `useFormHandlers`
+
+3. **Prop drilling** for view-level component communication
+   - State remains centralized in orchestrator components
+   - Handlers passed down as props
+   - Type-safe prop interfaces in `types.ts` files
+
+4. **React Context API** for global state (avoiding prop drilling)
+   - Used for app-wide state (user, model, toasts)
+   - Not used for view-specific state
+
+5. **TypeScript generics** in services for type-safe API responses
+
+6. **localStorage abstraction** via databaseService to simulate backend persistence
+
+7. **Fallback logic** in geminiService for graceful degradation between LLM providers
 
 ## Important Architecture Details
 
@@ -145,10 +181,55 @@ Users can switch between Gemini and Groq in Settings:
 
 ## Large Files to Be Aware Of
 
-- **GeneratePrd.tsx** (~85KB) - Contains the 6-step PRD generation wizard with complex state management for logos, competitors, UI flows
+- **views/GeneratePrd.tsx** (~393 lines) - **REFACTORED Nov 2025** - Main orchestrator for 6-step PRD wizard, now 67% smaller
 - **geminiService.ts** (~28KB) - AI integration with fallback logic and JSON schema handling
 - **AgentHub.tsx** (~16KB) - Agent discovery, chat management, and favorites system
-- **CreativeDirectionModalReimaginado.tsx** (~25KB) - Creative direction workflow (appears unused/legacy)
+
+### GeneratePrd Component Architecture (Modular - Nov 2025)
+
+The GeneratePrd view has been refactored into a modular architecture following Single Responsibility Principle:
+
+```
+components/GeneratePrd/
+├── modals/                         (3 modal components)
+│   ├── MagicMatchModal.tsx        (73 lines)
+│   ├── CreativeDirectionModal.tsx (177 lines)
+│   ├── TurboProgressModal.tsx     (37 lines)
+│   └── types.ts, index.ts
+├── steps/                          (6 step components)
+│   ├── DocumentStep.tsx           (112 lines)
+│   ├── CompetitorsStep.tsx        (88 lines)
+│   ├── UiPlanStep.tsx             (88 lines)
+│   ├── DatabaseStep.tsx           (117 lines)
+│   ├── LogoStep.tsx               (97 lines)
+│   ├── ReviewStep.tsx             (152 lines)
+│   └── types.ts, index.ts
+└── hooks/                          (3 custom hooks)
+    ├── usePrdGeneration.ts        (260 lines - AI generation handlers)
+    ├── useChatHandlers.ts         (173 lines - chat/agent logic)
+    ├── useFormHandlers.ts         (87 lines - form/navigation)
+    └── index.ts
+```
+
+**Key Architectural Decisions:**
+- **Separation of Concerns**: UI (steps) vs Logic (hooks) vs State (main component)
+- **Custom Hooks**: Business logic extracted from view into reusable hooks
+- **Type Safety**: All components have strict TypeScript interfaces in `types.ts` files
+- **Barrel Exports**: Clean imports via `index.ts` files
+- **Props Drilling**: State management kept centralized in main component
+
+**When Working with GeneratePrd:**
+1. **Adding new step**: Create component in `steps/`, add interface to `steps/types.ts`
+2. **Adding new modal**: Create component in `modals/`, add interface to `modals/types.ts`
+3. **Adding AI generation**: Add handler to `usePrdGeneration.ts` hook
+4. **Adding form logic**: Add handler to `useFormHandlers.ts` hook
+5. **Adding chat logic**: Add handler to `useChatHandlers.ts` hook
+
+**Performance:**
+- Build time: ~2.10s (no regression after refactoring)
+- Code reduction: 1200 → 393 lines in main file (-67.3%)
+- Total components: 13 reusable components
+- Testability: High (each component can be tested in isolation)
 
 ## Type Safety
 
@@ -208,3 +289,64 @@ The ChatDrawer component can be used by any feature:
 - All data is client-side only (lost on browser clear)
 - Good for demo/prototyping, not production user data
 - Consider backend migration if scaling beyond single user
+
+## Documentation Maintenance
+
+### When to Update CLAUDE.md and regra.md
+
+You MUST update these documentation files when:
+
+1. **Adding new architectural patterns**
+   - New service layer components
+   - New state management approaches
+   - New design patterns introduced
+
+2. **Changing core workflows**
+   - Build/deployment process changes
+   - Development environment setup changes
+   - New npm scripts or commands
+
+3. **Adding major features**
+   - New AI models or providers
+   - New view/page types
+   - New data persistence strategies
+
+4. **Modifying critical rules**
+   - Changes to the Facade pattern
+   - Updates to error handling strategies
+   - New TypeScript patterns or conventions
+
+### How to Update
+
+1. **For regra.md** (Portuguese - Primary):
+   - Update with detailed technical rules and code examples
+   - Maintain the numbered section structure
+   - Add new sections if introducing entirely new concepts
+   - Include TypeScript code examples for patterns
+
+2. **For CLAUDE.md** (English - Reference):
+   - Update the "CRITICAL: Development Rules" section with key changes
+   - Add to relevant architecture sections
+   - Keep it concise but comprehensive
+   - Cross-reference with regra.md when appropriate
+
+3. **Always update both files together** to maintain consistency
+
+### Documentation Hierarchy
+
+```
+regra.md (Portuguese)
+  ├── Source of truth for development rules
+  ├── Detailed implementation guidelines
+  └── Code examples and patterns
+
+CLAUDE.md (English)
+  ├── AI assistant reference
+  ├── High-level architecture overview
+  └── Quick reference for common tasks
+
+updates/updates.md
+  └── Chronological changelog of all modifications
+```
+
+**Remember**: Outdated documentation is worse than no documentation. Keep these files current!

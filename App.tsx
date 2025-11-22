@@ -11,6 +11,7 @@ import { Settings } from './views/Settings';
 import { AgentHub } from './views/AgentHub';
 import { Auth } from './views/Auth';
 import { Toast } from './components/Toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppContext } from './contexts/AppContext';
 import { geminiService } from './services/geminiService';
 import { db } from './services/databaseService';
@@ -93,7 +94,9 @@ const App: React.FC = () => {
       };
 
       loadUserData();
-  }, [user, showToast]);
+      // showToast is wrapped in useCallback with empty deps, so it's stable
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleLoginSuccess = (loggedInUser: User) => {
       setUser(loggedInUser);
@@ -131,9 +134,10 @@ const App: React.FC = () => {
         setPrds(prev => [savedPrd, ...prev]);
         showToast('PRD salvo no banco de dados!');
         setActiveView('my-documents');
-    } catch (e: any) {
+    } catch (e) {
         console.error(e);
-        showToast(e.message || 'Erro ao salvar PRD.', 'error');
+        const message = e instanceof Error ? e.message : 'Erro ao salvar PRD.';
+        showToast(message, 'error');
     }
   };
 
@@ -145,9 +149,10 @@ const App: React.FC = () => {
         setPrompts(prev => [savedPrompt, ...prev]);
         showToast('Prompt salvo no banco de dados!');
         setActiveView('my-documents');
-    } catch (e: any) {
+    } catch (e) {
         console.error(e);
-        showToast(e.message || 'Erro ao salvar Prompt.', 'error');
+        const message = e instanceof Error ? e.message : 'Erro ao salvar Prompt.';
+        showToast(message, 'error');
     }
   };
 
@@ -161,8 +166,9 @@ const App: React.FC = () => {
             setActiveView('my-documents');
             setSelectedDocument(null);
         }
-    } catch (e: any) {
-        showToast(e.message || 'Erro ao excluir PRD.', 'error');
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Erro ao excluir PRD.';
+        showToast(message, 'error');
     }
   };
 
@@ -176,8 +182,9 @@ const App: React.FC = () => {
             setActiveView('my-documents');
             setSelectedDocument(null);
         }
-    } catch (e: any) {
-        showToast(e.message || 'Erro ao excluir Prompt.', 'error');
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Erro ao excluir Prompt.';
+        showToast(message, 'error');
     }
   };
 
@@ -233,20 +240,22 @@ const App: React.FC = () => {
   }
 
   return (
-    <AppContext.Provider value={{ showToast, currentModel, updateModel, user, logout: handleLogout }}>
-      <div className="flex h-screen bg-gray-100 font-sans">
-        <Sidebar 
-            activeView={activeView} 
-            setActiveView={setActiveView} 
-            ideaCount={ideas.length} 
-            currentModel={currentModel}
-        />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto print:p-0 print:overflow-visible">
-          {renderView()}
-        </main>
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      </div>
-    </AppContext.Provider>
+    <ErrorBoundary>
+      <AppContext.Provider value={{ showToast, currentModel, updateModel, user, logout: handleLogout }}>
+        <div className="flex h-screen bg-gray-100 font-sans">
+          <Sidebar
+              activeView={activeView}
+              setActiveView={setActiveView}
+              ideaCount={ideas.length}
+              currentModel={currentModel}
+          />
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto print:p-0 print:overflow-visible">
+            {renderView()}
+          </main>
+          {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        </div>
+      </AppContext.Provider>
+    </ErrorBoundary>
   );
 };
 
