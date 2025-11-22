@@ -247,10 +247,39 @@ export const usePrdGeneration = ({
     }
   };
 
+  const handleAnalyzeCompetitor = async (competitor: Competitor, index: number) => {
+    if (competitor.details) return; // Do not re-fetch if details already exist
+
+    try {
+      const details = await geminiService.analyzeCompetitorDeeply(
+        competitor.name,
+        prdData.industry || '',
+        competitor.notes
+      );
+
+      if (details) {
+        setPrdData(prev => {
+          const newCompetitors = [...(prev.content?.competitors || [])];
+          newCompetitors[index] = { ...newCompetitors[index], details };
+          return {
+            ...prev,
+            content: { ...prev.content, competitors: newCompetitors }
+          };
+        });
+      } else {
+        appContext?.showToast('Não foi possível carregar os detalhes do concorrente.', 'error');
+      }
+    } catch (e) {
+      console.error('Error analyzing competitor:', e);
+      appContext?.showToast('Ocorreu um erro ao analisar o concorrente.', 'error');
+    }
+  };
+
   return {
     handleSmartFill,
     handleGeneratePrdStructure,
     handleGenerateCompetitors,
+    handleAnalyzeCompetitor,
     handleGenerateUi,
     handleGenerateDb,
     handleGenerateLogo,
